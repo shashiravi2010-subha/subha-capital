@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SUBHA CAPITAL</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{--bg:#090C10;--sur:#0F1318;--card:#141920;--bdr:#1E2630;--gold:#F0A500;--gdim:#3A2800;--grn:#00C896;--grdim:#003D2C;--red:#FF4757;--rdim:#3D0010;--blu:#3D8EFF;--bdim:#0A2040;--txt:#E8ECF0;--mut:#5A6470;--lbl:#8A94A0;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;}
+.hdr{background:var(--sur);border-bottom:1px solid var(--bdr);padding:13px 16px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;}
+.bi{width:34px;height:34px;background:linear-gradient(135deg,var(--gold),#c07000);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;font-size:13px;}
+.bn{font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1.5px;}
+.bs{font-size:8px;color:var(--mut);letter-spacing:2px;text-transform:uppercase;margin-top:2px;}
+#clk{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;text-align:right;}
+#dt{font-size:8px;color:var(--mut);text-align:right;margin-top:2px;}
+.main{padding:13px 12px;display:flex;flex-direction:column;gap:11px;max-width:480px;margin:0 auto;}
+.btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),#c07000);border:none;border-radius:12px;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#000;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px rgba(240,165,0,0.2);}
+.btn:active{transform:scale(0.98);}
+.crd{background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:14px;display:none;}
+.ctit{font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--lbl);margin-bottom:10px;}
+.slbl{font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--mut);display:none;padding:0 2px;}
+.stbar{display:none;align-items:center;gap:7px;padding:9px 11px;background:var(--sur);border-radius:8px;border:1px solid var(--bdr);font-size:11px;color:var(--mut);}
+.sdot{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:pu 1s infinite;flex-shrink:0;}
+@keyframes pu{0%,100%{opacity:1;}50%{opacity:0.2;}}
+.mbdg{padding:4px 11px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1px;}
+.bull{background:var(--grdim);color:var(--grn);}.bear{background:var(--rdim);color:var(--red);}.neut{background:var(--bdim);color:var(--blu);}
+.mhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.mi{background:var(--sur);border:1px solid var(--bdr);border-radius:9px;padding:9px 11px;}
+.ml{font-size:8px;color:var(--mut);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.mv{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;}
+.mc{font-family:'JetBrains Mono',monospace;font-size:10px;margin-top:2px;}
+.up{color:var(--grn);}.down{color:var(--red);}.flat{color:var(--blu);}
+.aibox{background:rgba(61,142,255,0.05);border:1px solid var(--bdim);border-radius:9px;padding:10px;margin-top:10px;}
+.aitit{font-size:8px;color:var(--blu);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;font-weight:600;}
+.aitxt{font-size:11px;color:var(--txt);line-height:1.6;}
+.dbn{border-radius:12px;padding:13px 15px;display:none;align-items:center;gap:11px;}
+.go{background:var(--grdim);border:1px solid var(--grn);}.skip{background:var(--rdim);border:1px solid var(--red);}.wait{background:var(--bdim);border:1px solid var(--blu);}
+.dtit{font-size:14px;font-weight:700;}.dsub{font-size:11px;margin-top:3px;opacity:0.85;line-height:1.4;}
+.sr{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--bdr);}
+.sr:last-child{border-bottom:none;}
+.srk{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--mut);width:16px;flex-shrink:0;}
+.sn{flex:1;font-size:12px;font-weight:500;padding:0 7px;}
+.sl2{font-size:9px;color:var(--mut);}
+.sc2{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;width:52px;text-align:right;}
+.sbw{width:40px;height:3px;background:var(--bdr);border-radius:2px;margin-left:7px;overflow:hidden;flex-shrink:0;}
+.sb{height:100%;border-radius:2px;}
+.sec-hdr{font-size:8px;font-weight:700;letter-spacing:2px;padding:5px 7px;border-radius:5px;margin-bottom:5px;}
+.rck-card{background:var(--sur);border:1px solid var(--bdr);border-radius:9px;padding:11px;margin-bottom:7px;}
+.rck-card:last-child{margin-bottom:0;}
+.rck-sym{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--gold);}
+.rck-pts{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;}
+.rck-lbl{font-size:8px;color:var(--mut);}
+.rck-conds{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;}
+.cond{font-size:8px;padding:2px 6px;border-radius:5px;font-weight:600;}
+.cpass{background:var(--grdim);color:var(--grn);}.cfail{background:var(--rdim);color:var(--red);}
+.stk{background:var(--sur);border:1px solid var(--bdr);border-radius:9px;padding:11px;margin-bottom:7px;}
+.stk:last-child{margin-bottom:0;}
+.sym{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--gold);}
+.stag{font-size:8px;color:var(--mut);letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+.lvls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:7px;}
+.lb{background:var(--card);border:1px solid var(--bdr);border-radius:6px;padding:6px;text-align:center;}
+.ll{font-size:7px;color:var(--mut);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:2px;}
+.lv{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;}
+.lb.e{border-color:var(--gdim);}.lb.e .lv{color:var(--gold);}
+.lb.s{border-color:var(--rdim);}.lb.s .lv{color:var(--red);}
+.lb.t{border-color:var(--grdim);}.lb.t .lv{color:var(--grn);}
+.tgs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px;}
+.tg{font-size:8px;padding:2px 6px;border-radius:5px;font-weight:600;}
+.tv{background:var(--bdim);color:var(--blu);}.ts{background:var(--rdim);color:var(--red);}
+.side-hdr{font-size:8px;font-weight:700;letter-spacing:2px;padding:5px 7px;border-radius:5px;margin-bottom:6px;}
+.orbc{background:var(--card);border:1px solid var(--gdim);border-radius:14px;padding:14px;display:none;}
+.orbt{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:11px;}
+.ck{display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-bottom:1px solid var(--bdr);}
+.ck:last-child{border-bottom:none;}
+.ckn{font-size:13px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;background:var(--sur);}
+.ckt{font-size:11px;line-height:1.5;font-weight:500;}.cks{font-size:9px;color:var(--mut);margin-top:2px;line-height:1.4;}
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.ri{background:var(--sur);border:1px solid var(--bdr);border-radius:9px;padding:9px 11px;}
+.rl{font-size:8px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;}
+.rv{font-size:11px;font-weight:600;}.rv.d{color:var(--red);}.rv.g{color:var(--grn);}
+.live-tag{display:inline-flex;align-items:center;gap:4px;background:var(--grdim);border:1px solid var(--grn);border-radius:20px;padding:3px 9px;font-size:9px;font-weight:700;color:var(--grn);}
+.ldot{width:5px;height:5px;border-radius:50%;background:var(--grn);animation:pu 1s infinite;}
+.disc{background:rgba(240,165,0,0.04);border:1px solid var(--gdim);border-radius:9px;padding:9px 11px;font-size:9px;color:var(--mut);line-height:1.6;display:none;}
+.ftr{text-align:center;padding:14px 16px 28px;font-size:9px;color:var(--mut);letter-spacing:1px;display:none;}
+.ftr span{color:var(--gold);}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div style="display:flex;align-items:center;gap:9px;">
+    <div class="bi">SC</div>
+    <div><div class="bn">SUBHA CAPITAL</div><div class="bs">Live Intelligence v7</div></div>
+  </div>
+  <div><div id="clk">--:--:--</div><div id="dt"></div></div>
+</div>
+<div class="main">
+  <div class="crd" style="display:block;">
+    <div class="ctit">YOUR CAPITAL TODAY</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+      <div><div style="font-size:9px;color:var(--lbl);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Capital (₹)</div><input style="background:var(--sur);border:1px solid var(--bdr);border-radius:7px;padding:9px 11px;font-family:JetBrains Mono,monospace;font-size:13px;color:var(--txt);width:100%;" id="cap" type="number" value="100000"></div>
+      <div><div style="font-size:9px;color:var(--lbl);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Risk %</div><input style="background:var(--sur);border:1px solid var(--bdr);border-radius:7px;padding:9px 11px;font-family:JetBrains Mono,monospace;font-size:13px;color:var(--txt);width:100%;" id="rsk" type="number" value="1" step="0.5"></div>
+    </div>
+  </div>
+  <button class="btn" id="fbtn" onclick="load()">⚡ GET TODAY'S MARKET BRIEF</button>
+  <div class="stbar" id="stbar"><div class="sdot"></div><span id="stxt">Loading live data...</span></div>
+
+  <div class="slbl" id="l1">1 · MARKET PULSE — 8:45 AM CHECK</div>
+  <div class="crd" id="mcard">
+    <div class="mhdr"><div class="ctit" style="margin:0">PRE-MARKET BIAS</div><div id="mbdg" class="mbdg">—</div></div>
+    <div class="mgrid" id="mgrid"></div>
+    <div class="aibox"><div class="aitit">⚡ AI ANALYSIS</div><div class="aitxt" id="aitxt">—</div></div>
+  </div>
+  <div class="dbn" id="dbn"><div style="font-size:22px;flex-shrink:0;" id="dic"></div><div><div class="dtit" id="dtit"></div><div class="dsub" id="dsub"></div></div></div>
+
+  <div class="slbl" id="l2">2 · SECTOR HEATMAP</div>
+  <div class="crd" id="scard"><div id="slist"></div></div>
+
+  <div class="slbl" id="l3">3 · ROCKERS SCREENER — LONG & SHORT</div>
+  <div class="crd" id="rcard">
+    <div class="mhdr"><div class="ctit" style="margin:0">6-CONDITION SCAN</div><div id="rckbadge" style="font-size:8px;padding:3px 8px;border-radius:8px;font-weight:700;background:rgba(240,165,0,0.1);color:var(--gold);">—</div></div>
+    <div id="rcklist"></div>
+  </div>
+
+  <div class="slbl" id="l4">4 · TRADE CANDIDATES</div>
+  <div class="crd" id="tcard">
+    <div class="mhdr"><div class="ctit" style="margin:0">TODAY'S SETUPS</div><div id="tcnt" style="font-size:9px;color:var(--mut);background:var(--sur);padding:2px 8px;border-radius:8px;border:1px solid var(--bdr);"></div></div>
+    <div id="tlist"></div>
+  </div>
+
+  <div class="slbl" id="l5">5 · ENTRY CHECKLIST</div>
+  <div class="orbc" id="orbcard">
+    <div class="orbt">⏱ FOLLOW THIS EVERY SINGLE DAY</div>
+    <div id="cklist"></div>
+  </div>
+
+  <div class="slbl" id="l6">6 · RISK RULES</div>
+  <div class="crd" id="riskcard"><div class="rgrid" id="rgrid"></div></div>
+
+  <div class="disc" id="disc">⚠️ For planning only. Not financial advice. Always use stop losses.</div>
+  <div class="ftr" id="ftr">Built for <span>Ravi</span> · SUBHA CAPITAL v7 · NSE Intraday · 100% Live</div>
+</div>
+<script>
+function updateClock(){
+  const ist=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));
+  const p=n=>String(n).padStart(2,'0');
+  document.getElementById('clk').textContent=`${p(ist.getHours())}:${p(ist.getMinutes())}:${p(ist.getSeconds())}`;
+  const D=['SUN','MON','TUE','WED','THU','FRI','SAT'],M=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  document.getElementById('dt').textContent=`${D[ist.getDay()]} ${ist.getDate()} ${M[ist.getMonth()]} ${ist.getFullYear()} · IST`;
+}
+updateClock(); setInterval(updateClock,1000);
+
+const sh=id=>document.getElementById(id).style.display='block';
+const sf=id=>document.getElementById(id).style.display='flex';
+const fmt=n=>Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const sgn=n=>n>=0?'+':'';
+const cl=n=>n>0?'up':n<0?'down':'flat';
+
+async function load(){
+  const btn=document.getElementById('fbtn');
+  btn.disabled=true; btn.innerHTML='⏳ LOADING LIVE DATA...';
+  const stbar=document.getElementById('stbar');
+  stbar.style.display='flex';
+  document.getElementById('stxt').textContent='Reading live market data...';
+
+  const cap=parseFloat(document.getElementById('cap').value)||100000;
+  const rp=parseFloat(document.getElementById('rsk').value)||1;
+
+  try{
+    // Read data.json — fetched by GitHub Actions from Angel One
+    const resp = await fetch('data.json?t='+Date.now());
+    if(!resp.ok) throw new Error('Data not ready yet');
+    const d = await resp.json();
+
+    document.getElementById('stxt').textContent='Getting AI analysis...';
+
+    let ai='Follow the checklist. Wait for 9:30 AM ORB confirmation before entry.';
+    try{
+      const bias=d.market.bias;
+      const top=d.sectors[0]?.name||'';
+      const bot=d.sectors[d.sectors.length-1]?.name||'';
+      const pr=`NSE market. Nifty ${sgn(d.market.nifty50.chg)}${d.market.nifty50.chg}%, VIX ${d.market.vix.ltp}, top sector ${top}, weak ${bot}. 2 sentences max 35 words: bias and ORB+VWAP advice.`;
+      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:80,messages:[{role:'user',content:pr}]})});
+      if(r.ok){const rd=await r.json();const t=rd.content?.map(i=>i.text||'').join('').trim();if(t)ai=t;}
+    }catch(e){}
+
+    stbar.style.display='none';
+    render(d,ai,cap,rp);
+  }catch(e){
+    stbar.style.display='none';
+    document.getElementById('stxt').textContent='';
+    // Show error with helpful message
+    document.getElementById('mcard').style.display='block';
+    document.getElementById('l1').style.display='block';
+    document.getElementById('mgrid').innerHTML=`
+      <div style="grid-column:1/-1;background:var(--rdim);border:1px solid var(--red);border-radius:9px;padding:14px;text-align:center;">
+        <div style="font-size:20px;margin-bottom:8px;">⏰</div>
+        <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:6px;">Data Not Ready Yet</div>
+        <div style="font-size:11px;color:var(--mut);line-height:1.6;">
+          GitHub Actions runs at <strong style="color:var(--gold)">8:45 AM IST</strong> on trading days.<br>
+          Open this page after 8:45 AM on Monday–Friday.<br><br>
+          <strong style="color:var(--txt)">Today is ${new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata',weekday:'long'})}.</strong><br>
+          ${new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Kolkata'})).getDay()>=1&&new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Kolkata'})).getDay()<=5?'Check again at 8:45 AM today.':'Come back Monday morning at 8:45 AM.'}
+        </div>
+      </div>`;
+  }
+  btn.disabled=false; btn.innerHTML='🔄 REFRESH MARKET BRIEF';
+}
+
+function render(d,ai,cap,rp){
+  const ra=cap*rp/100;
+
+  // SECTION 1
+  const nChg=d.market.nifty50.chg;
+  const vix=d.market.vix.ltp;
+  const nLtp=d.market.nifty50.ltp;
+  const vixCol=vix<13?'var(--grn)':vix<16?'var(--gold)':'var(--red)';
+  const vixSig=vix<13?'✅ SAFE':vix<16?'⚠️ CAUTION':'🚫 HIGH RISK';
+  const nCol=nChg>0?'var(--grn)':nChg<0?'var(--red)':'var(--blu)';
+
+  document.getElementById('mgrid').innerHTML=`
+    <div class="mi" style="grid-column:1/-1;border-left:3px solid ${nCol}">
+      <div class="ml" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>📊 NIFTY 50 — LIVE</span>
+        <span class="live-tag"><span class="ldot"></span>LIVE · ${d.generated_at}</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-top:3px;">
+        <div class="mv" style="color:${nCol}">${fmt(nLtp)}</div>
+        <div class="mc" style="color:${nCol}">${sgn(nChg)}${nChg.toFixed(2)}%</div>
+      </div>
+      <div style="margin-top:4px;font-size:10px;font-weight:700;color:${nCol}">${nChg>0.3?'BULLISH MOMENTUM ▲':nChg<-0.3?'BEARISH PRESSURE ▼':'FLAT — WAIT FOR DIRECTION'}</div>
+    </div>
+    <div class="mi" style="border-left:3px solid ${vixCol}">
+      <div class="ml">📊 INDIA VIX</div>
+      <div class="mv" style="color:${vixCol}">${vix.toFixed(1)}</div>
+      <div style="margin-top:4px;font-size:10px;font-weight:700;color:${vixCol}">${vixSig}</div>
+      <div style="margin-top:2px;font-size:8px;color:var(--mut)">&lt;13 Safe · 13-16 Caution · &gt;16 Skip</div>
+    </div>
+    <div class="mi" style="border-left:3px solid var(--gold)">
+      <div class="ml">⏱ NIFTY 50 ORB</div>
+      <div class="mv" style="color:var(--mut)">— — —</div>
+      <div style="margin-top:4px;font-size:10px;font-weight:700;color:var(--gold)">WAIT FOR 9:30 AM</div>
+      <div style="margin-top:2px;font-size:8px;color:var(--mut)">After first 15-min candle closes</div>
+    </div>`;
+
+  const bc=d.market.bias==='BULLISH'?'bull':d.market.bias==='BEARISH'?'bear':'neut';
+  const bl=d.market.bias==='BULLISH'?'PRE-MKT BULLISH':d.market.bias==='BEARISH'?'PRE-MKT BEARISH':'NEUTRAL';
+  const b=document.getElementById('mbdg'); b.textContent=bl; b.className='mbdg '+bc;
+  document.getElementById('aitxt').textContent=ai;
+  sh('l1'); sh('mcard');
+
+  // DECISION
+  const db=document.getElementById('dbn');
+  const topSec=d.sectors[0]?.name||'';
+  const cfg=d.market.bias==='BULLISH'
+    ?{cls:'go',ic:'✅',tit:'BULLISH — PREPARE LONG TRADES',col:'var(--grn)',sub:`Nifty ${sgn(nChg)}${nChg.toFixed(2)}% · VIX ${vix.toFixed(1)} safe · ${topSec} leading. Wait for 9:30 AM ORB.`}
+    :d.market.bias==='BEARISH'
+    ?{cls:'skip',ic:'🚫',tit:'BEARISH — CONSIDER SHORTS ONLY',col:'var(--red)',sub:`VIX ${vix.toFixed(1)} elevated or Nifty weak. Shorts only with tight SL.`}
+    :{cls:'wait',ic:'⏳',tit:'NEUTRAL — WAIT FOR 9:30 AM',col:'var(--blu)',sub:'Mixed signals. Wait for first candle direction before deciding.'};
+  db.className='dbn '+cfg.cls; db.style.display='flex';
+  document.getElementById('dic').textContent=cfg.ic;
+  const dt=document.getElementById('dtit'); dt.textContent=cfg.tit; dt.style.color=cfg.col;
+  document.getElementById('dsub').textContent=cfg.sub;
+
+  // SECTORS
+  const secs=d.sectors;
+  const mx=Math.max(...secs.map(s=>Math.abs(s.chg)))||1;
+
+  // Build stock price lookup from long+short candidates
+  const stockPrices={};
+  [...(d.long||[]),(d.short||[])].forEach(s=>{if(s.sym&&s.ltp)stockPrices[s.sym]=s.ltp;});
+
+  const secRow=(s,i,isTop)=>{
+    // Show index price if available, else show leader stock price
+    const idxPx=s.idx_price&&s.idx_price>0?s.idx_price:0;
+    const stkPx=s.leader_price||stockPrices[s.leader]||0;
+    const priceStr=idxPx>0?`₹${fmt(idxPx)}`:stkPx>0?`${s.leader} ₹${fmt(stkPx)}`:'';
+    return `
+    <div class="sr" style="padding:10px 0;">
+      <div class="srk" style="color:${isTop?'var(--grn)':'var(--red)'};font-size:10px;font-weight:700;">${i+1}</div>
+      <div class="sn">
+        <div style="font-size:13px;font-weight:600;">${s.name}</div>
+        <div style="font-size:9px;color:var(--mut);margin-top:1px;">${priceStr||s.leader}</div>
+      </div>
+      <div style="text-align:right;min-width:80px;">
+        <div style="font-family:JetBrains Mono,monospace;font-size:13px;font-weight:700;color:${s.chg>=0?'var(--grn)':'var(--red)'};">${sgn(s.chg)}${s.chg.toFixed(2)}%</div>
+        <div style="margin-top:4px;">
+          <div style="height:3px;background:var(--bdr);border-radius:2px;overflow:hidden;width:60px;margin-left:auto;">
+            <div style="height:100%;width:${Math.abs(s.chg)/mx*100}%;background:${s.chg>=0?'var(--grn)':'var(--red)'};border-radius:2px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  };
+
+  document.getElementById('slist').innerHTML=
+    `<div class="sec-hdr" style="color:var(--grn);background:var(--grdim)">📈 TOP SECTORS — LONG BIAS</div>`+
+    secs.slice(0,3).map((s,i)=>secRow(s,i,true)).join('')+
+    `<div class="sec-hdr" style="color:var(--red);background:var(--rdim);margin-top:10px">📉 WEAK SECTORS — SHORT BIAS</div>`+
+    secs.slice(-3).reverse().map((s,i)=>secRow(s,i,false)).join('');
+  sh('l2'); sh('scard');
+
+  // ROCKERS
+  const lP=d.long.filter(s=>s.score>=5).length;
+  const sP=d.short.filter(s=>s.score>=5).length;
+  document.getElementById('rckbadge').textContent=`${lP}L · ${sP}S STRONG`;
+
+  const rckCard=(s)=>{
+    const isL=s.side==='LONG';
+    const sc=s.score>=5?isL?'var(--grn)':'var(--red)':s.score>=3?'var(--gold)':'var(--mut)';
+    const condKeys=isL?['EMA20','SUPERT','RSI','MACD','VOL','PDH']:['EMA20','SUPERT','RSI','MACD','VOL','PDL'];
+    const condLabels=isL?
+      {EMA20:'EMA20 ABOVE',SUPERT:'SUPERT BULL',RSI:`RSI ${s.rsi} (50-70)`,MACD:'MACD BULL',VOL:`VOL ${s.vol_ratio}x`,PDH:'ABOVE PDH'}:
+      {EMA20:'EMA20 BELOW',SUPERT:'SUPERT BEAR',RSI:`RSI ${s.rsi} (30-50)`,MACD:'MACD BEAR',VOL:`VOL ${s.vol_ratio}x`,PDL:'BELOW PDL'};
+    return `<div class="rck-card" style="border-left:3px solid ${sc}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="rck-sym">${s.sym}</span>
+            <span style="font-size:8px;padding:2px 6px;border-radius:5px;font-weight:700;background:${isL?'rgba(0,200,150,0.1)':'rgba(255,71,87,0.1)'};color:${isL?'var(--grn)':'var(--red)'}">${isL?'📈 LONG':'📉 SHORT'}</span>
+            <span class="live-tag" style="font-size:7px;padding:2px 6px;"><span class="ldot" style="width:4px;height:4px;"></span>LIVE</span>
+          </div>
+          <div style="font-size:8px;color:var(--mut);margin-top:2px;">${s.sec} · ₹${fmt(s.ltp)} · <span style="color:${isL?'var(--grn)':'var(--red)'}">${sgn(s.chg)}${Math.abs(s.chg).toFixed(2)}%</span></div>
+        </div>
+        <div style="text-align:right;">
+          <div class="rck-pts" style="color:${sc}">${s.score}/6</div>
+          <div class="rck-lbl" style="color:${sc}">${s.score>=5?'STRONG':s.score>=3?'MODERATE':'WEAK'}</div>
+        </div>
+      </div>
+      <div class="rck-conds">${condKeys.map(k=>`<span class="cond ${s.conds[k]?'cpass':'cfail'}">${condLabels[k]||k}: ${s.conds[k]?'✓':'✗'}</span>`).join('')}</div>
+    </div>`;
+  };
+
+  document.getElementById('rcklist').innerHTML=
+    `<div class="side-hdr" style="color:var(--grn);background:var(--grdim)">📈 LONG ROCKERS — TOP SECTORS</div>`+
+    (d.long.length?d.long.map(s=>rckCard(s)).join(''):'<div style="color:var(--mut);font-size:11px;padding:8px;">No strong long setups today</div>')+
+    `<div class="side-hdr" style="color:var(--red);background:var(--rdim);margin-top:8px">📉 SHORT ROCKERS — WEAK SECTORS</div>`+
+    (d.short.length?d.short.map(s=>rckCard(s)).join(''):'<div style="color:var(--mut);font-size:11px;padding:8px;">No strong short setups today</div>');
+  sh('l3'); sh('rcard');
+
+  // TRADE CANDIDATES
+  document.getElementById('tcnt').textContent=`${d.long.length}L · ${d.short.length}S`;
+  const stkCard=(s)=>{
+    const isL=s.side==='LONG';
+    const risk=isL?(s.entry-s.sl):(s.sl-s.entry);
+    const qty=s.qty||Math.max(1,Math.floor(ra/Math.abs(risk)));
+    const sc=isL?'var(--grn)':'var(--red)';
+    return `<div class="stk" style="border-left:3px solid ${sc}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
+        <div><div style="display:flex;align-items:center;gap:5px;"><span class="sym">${s.sym}</span><span style="font-size:8px;padding:2px 6px;border-radius:5px;font-weight:700;background:${isL?'rgba(0,200,150,0.1)':'rgba(255,71,87,0.1)'};color:${sc}">${isL?'📈 LONG':'📉 SHORT'}</span></div><div class="stag">${s.sec}</div></div>
+        <div><div style="font-family:JetBrains Mono,monospace;font-size:15px;font-weight:600;color:${sc};text-align:right">₹${fmt(s.ltp)}</div><div style="font-family:JetBrains Mono,monospace;font-size:10px;color:${sc};text-align:right">${sgn(s.chg)}${Math.abs(s.chg).toFixed(2)}%</div></div>
+      </div>
+      <div class="lvls">
+        <div class="lb e"><span class="ll">${isL?'BUY ABOVE':'SELL BELOW'}</span><span class="lv">₹${fmt(s.entry)}</span></div>
+        <div class="lb s"><span class="ll">STOP LOSS</span><span class="lv">₹${fmt(s.sl)}</span></div>
+        <div class="lb t"><span class="ll">TARGET 1</span><span class="lv">₹${fmt(s.t1)}</span></div>
+      </div>
+      <div class="tgs">${isL?'<span class="tg tv">ABOVE VWAP</span>':'<span class="tg ts">BELOW VWAP</span>'}</div>
+      <div style="font-size:10px;color:var(--mut)">Qty: <strong style="color:${sc}">${qty} shares</strong> · Risk: ₹${Math.abs(risk).toFixed(1)}/share · Tgt2: ₹${fmt(s.t2)}</div>
+    </div>`;
+  };
+  document.getElementById('tlist').innerHTML=
+    `<div class="side-hdr" style="color:var(--grn);background:var(--grdim)">📈 LONG CANDIDATES</div>`+
+    (d.long.length?d.long.map(s=>stkCard(s)).join(''):'<div style="color:var(--mut);font-size:11px;padding:8px;">No long setups today</div>')+
+    `<div class="side-hdr" style="color:var(--red);background:var(--rdim);margin-top:8px">📉 SHORT CANDIDATES</div>`+
+    (d.short.length?d.short.map(s=>stkCard(s)).join(''):'<div style="color:var(--mut);font-size:11px;padding:8px;">No short setups today</div>');
+  sh('l4'); sh('tcard');
+
+  // CHECKLIST
+  const tL=d.long[0]; const tS=d.short[0];
+  const cks=[
+    {ic:'🌐',t:'8:45 AM · Check Gift Nifty gap direction',s:'Positive gap = bullish bias. Negative gap = bearish bias. Flat = wait.',col:'var(--grn)'},
+    {ic:'📊',t:`9:00 AM · VIX: ${vix.toFixed(1)} — ${vixSig}`,s:`${vix<13?'Safe to trade today.':vix<16?'Reduce position size 25%.':'Consider skipping today.'}`,col:vixCol},
+    {ic:'👁️',t:'9:15 AM · Market opens — WATCH ONLY',s:'First 15 mins = manipulation. Institutions still positioning. Zero entry.',col:'var(--gold)'},
+    {ic:'🕯️',t:'9:15–9:30 AM · Watch first candle behavior',s:`${tL?tL.sym:'LONG'}: green+VWAP+vol. ${tS?tS.sym:'SHORT'}: red+VWAP+vol.`,col:'var(--blu)'},
+    {ic:'⏱️',t:'9:30 AM · First candle closes — confirm NOW',s:`LONG trigger: ₹${tL?fmt(tL.entry):'—'} · SHORT trigger: ₹${tS?fmt(tS.entry):'—'}`,col:'var(--gold)'},
+    {ic:'📈',t:`LONG: ${tL?tL.sym:'—'} breaks ABOVE ₹${tL?fmt(tL.entry):'—'}`,s:`GTT: Entry ₹${tL?fmt(tL.entry):'—'} · SL ₹${tL?fmt(tL.sl):'—'} · Target ₹${tL?fmt(tL.t1):'—'} · Walk away.`,col:'var(--grn)'},
+    {ic:'📉',t:`SHORT: ${tS?tS.sym:'—'} breaks BELOW ₹${tS?fmt(tS.entry):'—'}`,s:`GTT: Entry ₹${tS?fmt(tS.entry):'—'} · SL ₹${tS?fmt(tS.sl):'—'} · Target ₹${tS?fmt(tS.t1):'—'} · Walk away.`,col:'var(--red)'},
+  ];
+  document.getElementById('cklist').innerHTML=cks.map(c=>`<div class="ck"><div class="ckn">${c.ic}</div><div><div class="ckt" style="color:${c.col}">${c.t}</div><div class="cks">${c.s}</div></div></div>`).join('');
+  sh('l5'); sh('orbcard');
+
+  // RISK
+  document.getElementById('rgrid').innerHTML=[
+    {l:'CAPITAL',v:`₹${Number(cap).toLocaleString('en-IN')}`,c:''},
+    {l:'MAX RISK',v:`₹${Math.round(ra).toLocaleString('en-IN')} (${rp}%)`,c:'d'},
+    {l:'TRADES TODAY',v:'1 ONLY',c:''},
+    {l:'ROCKERS MIN',v:'5/6 SCORE',c:'g'},
+    {l:'ENTRY AFTER',v:'9:30 AM IST',c:''},
+    {l:'HARD EXIT',v:'3:10 PM IST',c:'d'},
+    {l:'DATA UPDATED',v:'8:45 AM DAILY',c:'g'},
+    {l:'STOP LOSS',v:'NON-NEGOTIABLE',c:'d'},
+  ].map(r=>`<div class="ri"><div class="rl">${r.l}</div><div class="rv ${r.c}">${r.v}</div></div>`).join('');
+  sh('l6'); sh('riskcard'); sh('disc'); sh('ftr');
+}
+</script>
+</body>
+</html>
