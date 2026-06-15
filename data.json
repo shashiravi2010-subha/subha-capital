@@ -1,5 +1,5 @@
 {
-  "generated_at": "15 Jun 2026 07:39 PM IST",
+  "generated_at": "15 Jun 2026 07:54 PM IST",
   "market_status": "CLOSED",
   "is_live": true,
   "market": {
@@ -18,108 +18,78 @@
       "name": "REALTY",
       "chg": 2.24,
       "leader": "DLF",
-      "idx_price": 0.0
+      "idx_price": 614.45,
+      "leader_price": 614.45,
+      "leader_chg": 2.24
     },
     {
       "name": "AUTO",
       "chg": 1.65,
       "leader": "MARUTI",
-      "idx_price": 26274.8
+      "idx_price": 26274.8,
+      "leader_price": 13805.0,
+      "leader_chg": 1.88
     },
     {
       "name": "IT",
       "chg": -0.47,
       "leader": "INFY",
-      "idx_price": 0.0
+      "idx_price": 1134.9,
+      "leader_price": 1134.9,
+      "leader_chg": 0.43
     },
     {
       "name": "PHARMA",
       "chg": -0.98,
       "leader": "SUNPHARMA",
-      "idx_price": 0.0
+      "idx_price": 1806.0,
+      "leader_price": 1806.0,
+      "leader_chg": -0.66
     },
     {
       "name": "ENERGY",
       "chg": -1.2,
       "leader": "RELIANCE",
-      "idx_price": 0.0
+      "idx_price": 1307.0,
+      "leader_price": 1307.0,
+      "leader_chg": -0.63
     },
     {
       "name": "METAL",
       "chg": -1.29,
       "leader": "TATASTEEL",
-      "idx_price": 0.0
+      "idx_price": 197.28,
+      "leader_price": 197.28,
+      "leader_chg": -1.34
     },
     {
       "name": "BANKING",
       "chg": -1.79,
       "leader": "HDFCBANK",
-      "idx_price": 57198.8
+      "idx_price": 57198.8,
+      "leader_price": 777.35,
+      "leader_chg": -1.6
     },
     {
       "name": "FMCG",
       "chg": -2.25,
       "leader": "HINDUNILVR",
-      "idx_price": 0.0
+      "idx_price": 2156.1,
+      "leader_price": 2156.1,
+      "leader_chg": -2.0
     }
   ],
   "long": [
-    {
-      "sym": "INFY",
-      "sec": "IT",
-      "ltp": 1134.9,
-      "chg": 0.43,
-      "score": 3,
-      "rsi": 50,
-      "vol_ratio": 1.0,
-      "conds": {
-        "EMA20": false,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": false,
-        "PDH": false
-      },
-      "entry": 1153.3,
-      "sl": 1144.07,
-      "t1": 1167.14,
-      "t2": 1176.38,
-      "qty": 108,
-      "side": "LONG"
-    },
-    {
-      "sym": "TCS",
-      "sec": "IT",
-      "ltp": 2162.0,
-      "chg": -1.37,
-      "score": 3,
-      "rsi": 50,
-      "vol_ratio": 1.0,
-      "conds": {
-        "EMA20": false,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": false,
-        "PDH": false
-      },
-      "entry": 2196.38,
-      "sl": 2179.91,
-      "t1": 2221.09,
-      "t2": 2237.56,
-      "qty": 60,
-      "side": "LONG"
-    },
     {
       "sym": "MARUTI",
       "sec": "AUTO",
       "ltp": 13805.0,
       "chg": 1.88,
-      "score": 3,
-      "rsi": 50,
-      "vol_ratio": 1.0,
+      "score": 4,
+      "rsi": 66,
+      "vol_ratio": 1.4,
       "conds": {
-        "EMA20": false,
+        "EMA20": true,
         "SUPERT": true,
         "RSI": true,
         "MACD": true,
@@ -132,6 +102,52 @@
       "t2": 14286.19,
       "qty": 8,
       "side": "LONG"
+    },
+    {
+      "sym": "MM",
+      "sec": "AUTO",
+      "ltp": 3134.3,
+      "chg": 1.43,
+      "score": 3,
+      "rsi": 50,
+      "vol_ratio": 1.0,
+      "conds": {
+        "EMA20": false,
+        "SUPERT": true,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "PDH": false
+      },
+      "entry": 3173.33,
+      "sl": 3147.94,
+      "t1": 3211.41,
+      "t2": 3236.8,
+      "qty": 39,
+      "side": "LONG"
+    },
+    {
+      "sym": "SUNPHARMA",
+      "sec": "PHARMA",
+      "ltp": 1806.0,
+      "chg": -0.66,
+      "score": 3,
+      "rsi": 50,
+      "vol_ratio": 1.0,
+      "conds": {
+        "EMA20": false,
+        "SUPERT": true,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "PDH": false
+      },
+      "entry": 1821.64,
+      "sl": 1807.98,
+      "t1": 1842.13,
+      "t2": 1855.79,
+      "qty": 73,
+      "side": "LONG"
     }
   ],
   "short": [
@@ -140,14 +156,14 @@
       "sec": "BANKING",
       "ltp": 777.35,
       "chg": -1.6,
-      "score": 1,
-      "rsi": 50,
-      "vol_ratio": 1.0,
+      "score": 2,
+      "rsi": 57,
+      "vol_ratio": 1.1,
       "conds": {
         "EMA20": false,
-        "SUPERT": false,
-        "RSI": true,
-        "MACD": false,
+        "SUPERT": true,
+        "RSI": false,
+        "MACD": true,
         "VOL": false,
         "PDL": false
       },
