@@ -1,5 +1,5 @@
 {
-  "generated_at": "15 Jun 2026 07:30 PM IST",
+  "generated_at": "15 Jun 2026 07:39 PM IST",
   "market_status": "CLOSED",
   "is_live": true,
   "market": {
@@ -65,15 +65,61 @@
   ],
   "long": [
     {
+      "sym": "INFY",
+      "sec": "IT",
+      "ltp": 1134.9,
+      "chg": 0.43,
+      "score": 3,
+      "rsi": 50,
+      "vol_ratio": 1.0,
+      "conds": {
+        "EMA20": false,
+        "SUPERT": true,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "PDH": false
+      },
+      "entry": 1153.3,
+      "sl": 1144.07,
+      "t1": 1167.14,
+      "t2": 1176.38,
+      "qty": 108,
+      "side": "LONG"
+    },
+    {
+      "sym": "TCS",
+      "sec": "IT",
+      "ltp": 2162.0,
+      "chg": -1.37,
+      "score": 3,
+      "rsi": 50,
+      "vol_ratio": 1.0,
+      "conds": {
+        "EMA20": false,
+        "SUPERT": true,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "PDH": false
+      },
+      "entry": 2196.38,
+      "sl": 2179.91,
+      "t1": 2221.09,
+      "t2": 2237.56,
+      "qty": 60,
+      "side": "LONG"
+    },
+    {
       "sym": "MARUTI",
       "sec": "AUTO",
       "ltp": 13805.0,
       "chg": 1.88,
-      "score": 4,
-      "rsi": 66,
-      "vol_ratio": 1.4,
+      "score": 3,
+      "rsi": 50,
+      "vol_ratio": 1.0,
       "conds": {
-        "EMA20": true,
+        "EMA20": false,
         "SUPERT": true,
         "RSI": true,
         "MACD": true,
@@ -86,68 +132,68 @@
       "t2": 14286.19,
       "qty": 8,
       "side": "LONG"
-    },
-    {
-      "sym": "MM",
-      "sec": "AUTO",
-      "ltp": 3134.3,
-      "chg": 1.43,
-      "score": 4,
-      "rsi": 55,
-      "vol_ratio": 1.7,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": false,
-        "VOL": true,
-        "PDH": false
-      },
-      "entry": 3173.33,
-      "sl": 3147.94,
-      "t1": 3211.41,
-      "t2": 3236.8,
-      "qty": 39,
-      "side": "LONG"
-    },
-    {
-      "sym": "DLF",
-      "sec": "REALTY",
-      "ltp": 614.45,
-      "chg": 2.24,
-      "score": 4,
-      "rsi": 61,
-      "vol_ratio": 2.6,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": false,
-        "VOL": true,
-        "PDH": false
-      },
-      "entry": 621.54,
-      "sl": 615.32,
-      "t1": 630.87,
-      "t2": 637.09,
-      "qty": 160,
-      "side": "LONG"
     }
   ],
   "short": [
+    {
+      "sym": "HDFCBANK",
+      "sec": "BANKING",
+      "ltp": 777.35,
+      "chg": -1.6,
+      "score": 1,
+      "rsi": 50,
+      "vol_ratio": 1.0,
+      "conds": {
+        "EMA20": false,
+        "SUPERT": false,
+        "RSI": true,
+        "MACD": false,
+        "VOL": false,
+        "PDL": false
+      },
+      "entry": 774.05,
+      "sl": 781.02,
+      "t1": 763.59,
+      "t2": 756.62,
+      "qty": 143,
+      "side": "SHORT"
+    },
+    {
+      "sym": "ICICIBANK",
+      "sec": "BANKING",
+      "ltp": 1327.6,
+      "chg": -1.99,
+      "score": 1,
+      "rsi": 50,
+      "vol_ratio": 1.0,
+      "conds": {
+        "EMA20": false,
+        "SUPERT": false,
+        "RSI": true,
+        "MACD": false,
+        "VOL": false,
+        "PDL": false
+      },
+      "entry": 1322.65,
+      "sl": 1333.89,
+      "t1": 1305.79,
+      "t2": 1294.55,
+      "qty": 88,
+      "side": "SHORT"
+    },
     {
       "sym": "TATASTEEL",
       "sec": "METAL",
       "ltp": 197.28,
       "chg": -1.34,
-      "score": 4,
-      "rsi": 32,
-      "vol_ratio": 0.9,
+      "score": 1,
+      "rsi": 50,
+      "vol_ratio": 1.0,
       "conds": {
-        "EMA20": true,
-        "SUPERT": true,
+        "EMA20": false,
+        "SUPERT": false,
         "RSI": true,
-        "MACD": true,
+        "MACD": false,
         "VOL": false,
         "PDL": false
       },
@@ -156,52 +202,6 @@
       "t1": 193.49,
       "t2": 191.53,
       "qty": 510,
-      "side": "SHORT"
-    },
-    {
-      "sym": "HINDUNILVR",
-      "sec": "FMCG",
-      "ltp": 2156.1,
-      "chg": -2.0,
-      "score": 4,
-      "rsi": 48,
-      "vol_ratio": 0.6,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": false,
-        "PDL": false
-      },
-      "entry": 2145.7,
-      "sl": 2160.72,
-      "t1": 2123.17,
-      "t2": 2108.15,
-      "qty": 66,
-      "side": "SHORT"
-    },
-    {
-      "sym": "NESTLEIND",
-      "sec": "FMCG",
-      "ltp": 1374.7,
-      "chg": -2.5,
-      "score": 4,
-      "rsi": 45,
-      "vol_ratio": 0.7,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": false,
-        "PDL": false
-      },
-      "entry": 1368.76,
-      "sl": 1378.34,
-      "t1": 1354.39,
-      "t2": 1344.81,
-      "qty": 104,
       "side": "SHORT"
     }
   ],
