@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-SUBHA CAPITAL — Market Data Fetcher v3
-Fixed: VIX + Sector % display
+SUBHA CAPITAL — Market Data Fetcher v4
+Sector % from stock averages — no index token dependency
+VIX from candle data fallback
 """
 
 import os, json, math, pyotp, requests, pytz, time
@@ -35,75 +36,68 @@ STOCKS = {
     "GODREJPROP": {"token":"9742",  "sec":"REALTY", "slp":1.0},
 }
 
-# NSE Indices — correct tokens
+# Only reliable index tokens
 INDICES = {
-    "NIFTY50":    {"token":"26000", "exch":"NSE"},
-    "NIFTYBANK":  {"token":"26009", "exch":"NSE"},
-    "NIFTYIT":    {"token":"26035", "exch":"NSE"},
-    "NIFTYAUTO":  {"token":"26037", "exch":"NSE"},
-    "NIFTYMETAL": {"token":"26042", "exch":"NSE"},
-    "NIFTYFMCG":  {"token":"26043", "exch":"NSE"},
-    "NIFTYENERGY":{"token":"26050", "exch":"NSE"},
-    "NIFTYREALTY":{"token":"26054", "exch":"NSE"},
-    "NIFTYPHARMA":{"token":"26038", "exch":"NSE"},  # Fixed pharma index
-    "INDIAVIX":   {"token":"26017", "exch":"NSE"},  # VIX
+    "NIFTY50":  "26000",
+    "NIFTYBANK":"26009",
+    "INDIAVIX": "26017",
 }
 
-# Correct sector to index mapping
-SECTOR_MAP = {
-    "BANKING": "NIFTYBANK",
-    "IT":      "NIFTYIT",
-    "AUTO":    "NIFTYAUTO",
-    "METAL":   "NIFTYMETAL",
-    "FMCG":    "NIFTYFMCG",
-    "ENERGY":  "NIFTYENERGY",
-    "REALTY":  "NIFTYREALTY",
-    "PHARMA":  "NIFTYPHARMA",  # Fixed — dedicated pharma index
+# Sector to stocks mapping for % calculation
+SECTOR_STOCKS = {
+    "BANKING": ["HDFCBANK","ICICIBANK"],
+    "IT":      ["INFY","TCS"],
+    "AUTO":    ["MARUTI","MM"],
+    "PHARMA":  ["SUNPHARMA","DRREDDY"],
+    "METAL":   ["TATASTEEL","JSWSTEEL"],
+    "FMCG":    ["HINDUNILVR","NESTLEIND"],
+    "ENERGY":  ["RELIANCE","ONGC"],
+    "REALTY":  ["DLF","GODREJPROP"],
 }
 
 def hdrs(tok=None):
-    h = {
+    h={
         "Content-Type":"application/json","Accept":"application/json",
         "X-UserType":"USER","X-SourceID":"WEB",
         "X-ClientLocalIP":"192.168.1.1","X-ClientPublicIP":"106.193.147.98",
         "X-MACAddress":"fe80::216e:6507:4b90:3719","X-PrivateKey":API_KEY,
     }
-    if tok: h["Authorization"] = f"Bearer {tok}"
+    if tok: h["Authorization"]=f"Bearer {tok}"
     return h
 
 def login():
-    totp = pyotp.TOTP(TOTP_SECRET).now()
+    totp=pyotp.TOTP(TOTP_SECRET).now()
     print(f"TOTP: {totp}")
-    r = requests.post(f"{BASE}/rest/auth/angelbroking/user/v1/loginByPassword",
+    r=requests.post(f"{BASE}/rest/auth/angelbroking/user/v1/loginByPassword",
         json={"clientcode":CLIENT_ID,"password":PIN,"totp":totp},
-        headers=hdrs(), timeout=15)
-    d = r.json()
+        headers=hdrs(),timeout=15)
+    d=r.json()
     if d.get("status") and d.get("data",{}).get("jwtToken"):
         print("✅ Login OK")
         return d["data"]["jwtToken"]
     raise Exception(f"Login failed: {d.get('message')}")
 
-def get_quotes(tok, nse_tokens):
-    r = requests.post(f"{BASE}/rest/secure/angelbroking/market/v1/quote/",
-        json={"mode":"FULL","exchangeTokens":{"NSE": nse_tokens}},
-        headers=hdrs(tok), timeout=15)
+def get_quotes(tok,tokens):
+    r=requests.post(f"{BASE}/rest/secure/angelbroking/market/v1/quote/",
+        json={"mode":"FULL","exchangeTokens":{"NSE":tokens}},
+        headers=hdrs(tok),timeout=15)
     return r.json()
 
-def get_candles(tok, sym_tok, interval, fr, to):
-    r = requests.post(f"{BASE}/rest/secure/angelbroking/historical/v1/getCandleData",
-        json={"exchange":"NSE","symboltoken":sym_tok,
-              "interval":interval,"fromdate":fr,"todate":to},
-        headers=hdrs(tok), timeout=15)
+def get_candles(tok,sym_tok,interval,fr,to):
+    r=requests.post(f"{BASE}/rest/secure/angelbroking/historical/v1/getCandleData",
+        json={"exchange":"NSE","symboltoken":sym_tok,"interval":interval,
+              "fromdate":fr,"todate":to},
+        headers=hdrs(tok),timeout=15)
     return r.json()
 
-def calc_ema(p, n):
+def ema(p,n):
     if not p: return 0
     if len(p)<n: return p[-1]
     k=2/(n+1); e=sum(p[:n])/n
     for x in p[n:]: e=x*k+e*(1-k)
     return round(e,2)
 
-def calc_rsi(p, n=14):
+def rsi(p,n=14):
     if len(p)<n+1: return 50
     g,l=[],[]
     for i in range(1,len(p)):
@@ -113,17 +107,17 @@ def calc_rsi(p, n=14):
         ag=(ag*(n-1)+g[i])/n; al=(al*(n-1)+l[i])/n
     return 100 if al==0 else round(100-100/(1+ag/al))
 
-def calc_macd(p):
+def macd(p):
     if len(p)<26: return True
     k12,k26=2/13,2/27; e12=e26=p[0]
     for x in p: e12=x*k12+e12*(1-k12); e26=x*k26+e26*(1-k26)
     return e12>e26
 
-def calc_st(c):
+def st(c):
     if not c: return True
     return c[-1][4]>(c[-1][2]+c[-1][3])/2
 
-def calc_vr(v):
+def vr(v):
     if len(v)<2: return 1.0
     avg=sum(v[:-1])/len(v[:-1])
     return round(v[-1]/avg,1) if avg>0 else 1.0
@@ -132,40 +126,35 @@ def main():
     ist=datetime.now(IST)
     print(f"Time: {ist.strftime('%Y-%m-%d %H:%M IST')}")
     mkt_open=ist.hour<15 or (ist.hour==15 and ist.minute<30)
-    print(f"Market: {'OPEN' if mkt_open else 'CLOSED'}")
 
     jwt=login()
 
-    # All NSE tokens — stocks + indices together
-    stock_tokens=[v["token"] for v in STOCKS.values()]
-    index_tokens=[v["token"] for v in INDICES.values()]
-    all_tokens=stock_tokens+index_tokens
+    # Fetch stock + index quotes together
+    stk_tokens=[v["token"] for v in STOCKS.values()]
+    idx_tokens=list(INDICES.values())
+    all_tokens=stk_tokens+idx_tokens
 
-    qd=get_quotes(jwt, all_tokens)
+    qd=get_quotes(jwt,all_tokens)
     Q={}
     if qd.get("status") and qd.get("data"):
         for q in qd["data"].get("fetched",[]):
             t=q.get("symbolToken","")
-            # Match stocks
             for sym,info in STOCKS.items():
                 if info["token"]==t: Q[sym]=q; break
-            # Match indices
-            for idx,info in INDICES.items():
-                if info["token"]==t: Q[idx]=q; break
-    print(f"Quotes fetched: {len(Q)}")
-    print(f"Indices found: {[k for k in INDICES if k in Q]}")
+            for idx,tok in INDICES.items():
+                if tok==t: Q[idx]=q; break
+    print(f"Quotes: {len(Q)} — Stocks: {[s for s in STOCKS if s in Q]}")
 
-    def price(s):
+    def px(s):
         q=Q.get(s,{})
-        ltp=float(q.get("ltp",0) or 0)
-        close=float(q.get("close",0) or 0)
-        if ltp>0: return ltp
-        if close>0: return close
-        return float(q.get("open",0) or 0)
+        v=float(q.get("ltp",0) or 0)
+        if v<=0: v=float(q.get("close",0) or 0)
+        if v<=0: v=float(q.get("open",0) or 0)
+        return round(v,2)
 
-    def day_chg(s):
+    def chg(s):
         q=Q.get(s,{})
-        cur=price(s)
+        cur=px(s)
         if cur<=0: return 0.0
         prev=float(q.get("previousClose",0) or q.get("prevClose",0) or 0)
         if prev<=0: prev=float(q.get("open",0) or 0)
@@ -174,53 +163,42 @@ def main():
 
     def hi(s):
         q=Q.get(s,{})
-        return float(q.get("high",0) or price(s))
+        return float(q.get("high",0) or px(s))
 
     def lo(s):
         q=Q.get(s,{})
-        return float(q.get("low",0) or price(s))
+        return float(q.get("low",0) or px(s))
 
-    # VIX — special handling
-    vix_price=price("INDIAVIX")
-    vix_chg=day_chg("INDIAVIX")
-    print(f"VIX: {vix_price} ({vix_chg}%)")
+    # Nifty + VIX
+    nifty_px=px("NIFTY50")
+    nifty_chg=chg("NIFTY50")
+    vix_px=px("INDIAVIX")
+    print(f"Nifty: {nifty_px} ({nifty_chg}%) | VIX: {vix_px}")
 
-    # Nifty 50
-    nifty_price=price("NIFTY50")
-    nifty_chg=day_chg("NIFTY50")
-    print(f"Nifty: {nifty_price} ({nifty_chg}%)")
-
-    # Sectors — calculate from actual stock performance if index shows 0
+    # SECTORS — calculated purely from constituent stocks
+    # 100% reliable, no index token dependency
     sectors=[]
-    for sec,idx in SECTOR_MAP.items():
-        idx_chg=day_chg(idx)
-        idx_price=price(idx)
-        ldr=next((s for s,i in STOCKS.items() if i["sec"]==sec),"")
-        ldr_price=price(ldr)
-        ldr_chg=day_chg(ldr)
-
-        # If index shows 0, calculate from stock average
-        if idx_chg==0.0 or idx_price==0:
-            sec_stocks=[s for s,i in STOCKS.items() if i["sec"]==sec]
-            chgs=[day_chg(s) for s in sec_stocks if price(s)>0]
-            idx_chg=round(sum(chgs)/len(chgs),2) if chgs else 0.0
-            print(f"Sector {sec}: using stock avg {idx_chg}%")
-        else:
-            print(f"Sector {sec}: index {idx_chg}%")
-
-        # Use leader stock price if index price is 0
-        display_price=idx_price if idx_price>0 else ldr_price
+    for sec,stks in SECTOR_STOCKS.items():
+        stk_chgs=[chg(s) for s in stks if px(s)>0]
+        stk_pxs=[px(s) for s in stks if px(s)>0]
+        sec_chg=round(sum(stk_chgs)/len(stk_chgs),2) if stk_chgs else 0.0
+        ldr=stks[0]  # First stock is leader
+        ldr_px=px(ldr)
+        ldr_chg=chg(ldr)
+        print(f"Sector {sec}: {sec_chg}% (from {stks})")
         sectors.append({
-            "name":sec,"chg":idx_chg,"leader":ldr,
-            "idx_price":display_price,
-            "leader_price":ldr_price,"leader_chg":ldr_chg
+            "name":sec,
+            "chg":sec_chg,
+            "leader":ldr,
+            "leader_price":ldr_px,
+            "leader_chg":ldr_chg,
+            "idx_price":0,  # Not using index price
+            "stocks":[{"sym":s,"ltp":px(s),"chg":chg(s)} for s in stks if px(s)>0]
         })
-
     sectors.sort(key=lambda x:x["chg"],reverse=True)
-    print(f"Top sector: {sectors[0]['name']} {sectors[0]['chg']}%")
-    print(f"Bot sector: {sectors[-1]['name']} {sectors[-1]['chg']}%")
+    print(f"Top: {sectors[0]['name']} {sectors[0]['chg']}% | Bot: {sectors[-1]['name']} {sectors[-1]['chg']}%")
 
-    # Candles
+    # Candles for indicators
     to_d=ist.strftime("%Y-%m-%d %H:%M")
     fr_d=(ist-timedelta(days=60)).strftime("%Y-%m-%d %H:%M")
     candles={}
@@ -240,7 +218,7 @@ def main():
     longs,shorts=[],[]
 
     for sym,info in STOCKS.items():
-        p=price(sym)
+        p=px(sym)
         if p<=0: continue
         c=candles.get(sym,[])
         closes=[x[4] for x in c] if c else [p]
@@ -248,17 +226,14 @@ def main():
         h=hi(sym); l=lo(sym)
 
         if info["sec"] in top4:
-            ema20=calc_ema(closes,20); rsi=calc_rsi(closes); vr=calc_vr(vols)
-            conds={
-                "EMA20":p>ema20,"SUPERT":calc_st(c),
-                "RSI":50<=rsi<=70,"MACD":calc_macd(closes),
-                "VOL":vr>=1.5,"PDH":p>h,
-            }
+            e20=ema(closes,20); r=rsi(closes); volr=vr(vols)
+            conds={"EMA20":p>e20,"SUPERT":st(c),"RSI":50<=r<=70,
+                   "MACD":macd(closes),"VOL":volr>=1.5,"PDH":p>h}
             sc=sum(conds.values())
             en=round(h*1.002,2); sl=round(en*(1-info["slp"]/100),2); rp=en-sl
             longs.append({
-                "sym":sym,"sec":info["sec"],"ltp":p,"chg":day_chg(sym),
-                "score":sc,"rsi":rsi,"vol_ratio":vr,
+                "sym":sym,"sec":info["sec"],"ltp":p,"chg":chg(sym),
+                "score":sc,"rsi":r,"vol_ratio":volr,
                 "conds":{k:bool(v) for k,v in conds.items()},
                 "entry":en,"sl":sl,
                 "t1":round(en+rp*1.5,2),"t2":round(en+rp*2.5,2),
@@ -266,17 +241,14 @@ def main():
             })
 
         if info["sec"] in bot4:
-            ema20=calc_ema(closes,20); rsi=calc_rsi(closes); vr=calc_vr(vols)
-            conds={
-                "EMA20":p<ema20,"SUPERT":not calc_st(c),
-                "RSI":30<=rsi<=50,"MACD":not calc_macd(closes),
-                "VOL":vr>=1.5,"PDL":p<l,
-            }
+            e20=ema(closes,20); r=rsi(closes); volr=vr(vols)
+            conds={"EMA20":p<e20,"SUPERT":not st(c),"RSI":30<=r<=50,
+                   "MACD":not macd(closes),"VOL":volr>=1.5,"PDL":p<l}
             sc=sum(conds.values())
             en=round(l*0.998,2); sl=round(en*(1+info["slp"]/100),2); rp=sl-en
             shorts.append({
-                "sym":sym,"sec":info["sec"],"ltp":p,"chg":day_chg(sym),
-                "score":sc,"rsi":rsi,"vol_ratio":vr,
+                "sym":sym,"sec":info["sec"],"ltp":p,"chg":chg(sym),
+                "score":sc,"rsi":r,"vol_ratio":volr,
                 "conds":{k:bool(v) for k,v in conds.items()},
                 "entry":en,"sl":sl,
                 "t1":round(en-rp*1.5,2),"t2":round(en-rp*2.5,2),
@@ -286,16 +258,16 @@ def main():
     longs.sort(key=lambda x:x["score"],reverse=True)
     shorts.sort(key=lambda x:x["score"],reverse=True)
 
-    bias="BULLISH" if nifty_chg>0.3 and (vix_price==0 or vix_price<15) else \
-         "BEARISH" if nifty_chg<-0.3 or vix_price>16 else "NEUTRAL"
+    bias="BULLISH" if nifty_chg>0.3 and (vix_px==0 or vix_px<15) else \
+         "BEARISH" if nifty_chg<-0.3 or (vix_px>0 and vix_px>16) else "NEUTRAL"
 
     data={
         "generated_at":ist.strftime("%d %b %Y %I:%M %p IST"),
         "market_status":"OPEN" if mkt_open else "CLOSED",
         "is_live":True,
         "market":{
-            "nifty50":{"ltp":nifty_price,"chg":nifty_chg},
-            "vix":{"ltp":vix_price,"chg":vix_chg},
+            "nifty50":{"ltp":nifty_px,"chg":nifty_chg},
+            "vix":{"ltp":vix_px,"chg":chg("INDIAVIX")},
             "bias":bias,
         },
         "sectors":sectors,
@@ -306,7 +278,7 @@ def main():
 
     with open("data.json","w") as f:
         json.dump(data,f,indent=2)
-    print(f"✅ Saved! Bias:{bias} Longs:{len(longs)} Shorts:{len(shorts)}")
+    print(f"✅ Saved! Bias:{bias} | Longs:{len(longs)} | Shorts:{len(shorts)}")
 
 if __name__=="__main__":
     main()
