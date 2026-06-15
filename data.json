@@ -1,57 +1,66 @@
 {
-  "generated_at": "15 Jun 2026 06:41 PM IST",
+  "generated_at": "15 Jun 2026 07:30 PM IST",
+  "market_status": "CLOSED",
   "is_live": true,
   "market": {
     "nifty50": {
       "ltp": 23853.9,
-      "chg": 0.98
+      "chg": 0.0
     },
     "vix": {
       "ltp": 0.0,
-      "chg": 0
+      "chg": 0.0
     },
-    "bias": "BULLISH"
+    "bias": "NEUTRAL"
   },
   "sectors": [
     {
+      "name": "REALTY",
+      "chg": 2.24,
+      "leader": "DLF",
+      "idx_price": 0.0
+    },
+    {
       "name": "AUTO",
-      "chg": 1.28,
-      "leader": "MARUTI"
-    },
-    {
-      "name": "PHARMA",
-      "chg": 0.98,
-      "leader": "SUNPHARMA"
-    },
-    {
-      "name": "BANKING",
-      "chg": 0.68,
-      "leader": "HDFCBANK"
+      "chg": 1.65,
+      "leader": "MARUTI",
+      "idx_price": 26274.8
     },
     {
       "name": "IT",
-      "chg": 0,
-      "leader": "INFY"
+      "chg": -0.47,
+      "leader": "INFY",
+      "idx_price": 0.0
     },
     {
-      "name": "METAL",
-      "chg": 0,
-      "leader": "TATASTEEL"
-    },
-    {
-      "name": "FMCG",
-      "chg": 0,
-      "leader": "HINDUNILVR"
+      "name": "PHARMA",
+      "chg": -0.98,
+      "leader": "SUNPHARMA",
+      "idx_price": 0.0
     },
     {
       "name": "ENERGY",
-      "chg": 0,
-      "leader": "RELIANCE"
+      "chg": -1.2,
+      "leader": "RELIANCE",
+      "idx_price": 0.0
     },
     {
-      "name": "REALTY",
-      "chg": 0,
-      "leader": "DLF"
+      "name": "METAL",
+      "chg": -1.29,
+      "leader": "TATASTEEL",
+      "idx_price": 0.0
+    },
+    {
+      "name": "BANKING",
+      "chg": -1.79,
+      "leader": "HDFCBANK",
+      "idx_price": 57198.8
+    },
+    {
+      "name": "FMCG",
+      "chg": -2.25,
+      "leader": "HINDUNILVR",
+      "idx_price": 0.0
     }
   ],
   "long": [
@@ -59,7 +68,7 @@
       "sym": "MARUTI",
       "sec": "AUTO",
       "ltp": 13805.0,
-      "chg": 3.28,
+      "chg": 1.88,
       "score": 4,
       "rsi": 66,
       "vol_ratio": 1.4,
@@ -82,7 +91,7 @@
       "sym": "MM",
       "sec": "AUTO",
       "ltp": 3134.3,
-      "chg": 3.0,
+      "chg": 1.43,
       "score": 4,
       "rsi": 55,
       "vol_ratio": 1.7,
@@ -102,26 +111,26 @@
       "side": "LONG"
     },
     {
-      "sym": "ICICIBANK",
-      "sec": "BANKING",
-      "ltp": 1327.6,
-      "chg": -0.98,
-      "score": 3,
+      "sym": "DLF",
+      "sec": "REALTY",
+      "ltp": 614.45,
+      "chg": 2.24,
+      "score": 4,
       "rsi": 61,
-      "vol_ratio": 0.9,
+      "vol_ratio": 2.6,
       "conds": {
         "EMA20": true,
-        "SUPERT": false,
+        "SUPERT": true,
         "RSI": true,
-        "MACD": true,
-        "VOL": false,
+        "MACD": false,
+        "VOL": true,
         "PDH": false
       },
-      "entry": 1365.43,
-      "sl": 1353.82,
-      "t1": 1382.85,
-      "t2": 1394.46,
-      "qty": 86,
+      "entry": 621.54,
+      "sl": 615.32,
+      "t1": 630.87,
+      "t2": 637.09,
+      "qty": 160,
       "side": "LONG"
     }
   ],
@@ -130,7 +139,7 @@
       "sym": "TATASTEEL",
       "sec": "METAL",
       "ltp": 197.28,
-      "chg": -0.29,
+      "chg": -1.34,
       "score": 4,
       "rsi": 32,
       "vol_ratio": 0.9,
@@ -153,7 +162,7 @@
       "sym": "HINDUNILVR",
       "sec": "FMCG",
       "ltp": 2156.1,
-      "chg": -0.59,
+      "chg": -2.0,
       "score": 4,
       "rsi": 48,
       "vol_ratio": 0.6,
@@ -176,7 +185,7 @@
       "sym": "NESTLEIND",
       "sec": "FMCG",
       "ltp": 1374.7,
-      "chg": -0.07,
+      "chg": -2.5,
       "score": 4,
       "rsi": 45,
       "vol_ratio": 0.7,
