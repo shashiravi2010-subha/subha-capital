@@ -1,0 +1,40 @@
+name: SUBHA CAPITAL Market Brief
+
+on:
+  schedule:
+    - cron: '15 3 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyotp requests pytz
+
+      - name: Generate market data
+        env:
+          ANGEL_CLIENT_ID: ${{ secrets.ANGEL_CLIENT_ID }}
+          ANGEL_API_KEY: ${{ secrets.ANGEL_API_KEY }}
+          ANGEL_TOTP_SECRET: ${{ secrets.ANGEL_TOTP_SECRET }}
+          ANGEL_PIN: ${{ secrets.ANGEL_PIN }}
+        run: python fetch_data.py
+
+      - name: Commit and push data
+        run: |
+          git config user.name "SUBHA CAPITAL Bot"
+          git config user.email "bot@subhacapital.com"
+          git add data.json
+          git diff --staged --quiet || git commit -m "Market data update"
+          git push
