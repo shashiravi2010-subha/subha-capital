@@ -268,32 +268,30 @@ function render(d,ai,cap,rp){
   const secs=d.sectors;
   const mx=Math.max(...secs.map(s=>Math.abs(s.chg)))||1;
 
-  // Build stock price lookup from long+short candidates
-  const stockPrices={};
-  [...(d.long||[]),(d.short||[])].forEach(s=>{if(s.sym&&s.ltp)stockPrices[s.sym]=s.ltp;});
+  const secs=d.sectors;
+  const mx=Math.max(...secs.map(s=>Math.abs(s.chg)))||1;
 
   const secRow=(s,i,isTop)=>{
-    // Show index price if available, else show leader stock price
-    const idxPx=s.idx_price&&s.idx_price>0?s.idx_price:0;
-    const stkPx=s.leader_price||stockPrices[s.leader]||0;
-    const priceStr=idxPx>0?`₹${fmt(idxPx)}`:stkPx>0?`${s.leader} ₹${fmt(stkPx)}`:'';
+    const dispPx=s.leader_price>0?s.leader_price:0;
     return `
     <div class="sr" style="padding:10px 0;">
       <div class="srk" style="color:${isTop?'var(--grn)':'var(--red)'};font-size:10px;font-weight:700;">${i+1}</div>
       <div class="sn">
         <div style="font-size:13px;font-weight:600;">${s.name}</div>
-        <div style="font-size:9px;color:var(--mut);margin-top:1px;">${priceStr||s.leader}</div>
+        <div style="font-size:9px;color:var(--mut);margin-top:2px;font-family:JetBrains Mono,monospace;">
+          ${s.leader}${dispPx>0?' <span style="color:var(--txt);">₹'+fmt(dispPx)+'</span>':''}
+          ${s.leader_chg?'<span style="color:'+(s.leader_chg>=0?'var(--grn)':'var(--red)')+'"> '+sgn(s.leader_chg)+s.leader_chg.toFixed(2)+'%</span>':''}
+        </div>
       </div>
       <div style="text-align:right;min-width:80px;">
-        <div style="font-family:JetBrains Mono,monospace;font-size:13px;font-weight:700;color:${s.chg>=0?'var(--grn)':'var(--red)'};">${sgn(s.chg)}${s.chg.toFixed(2)}%</div>
-        <div style="margin-top:4px;">
+        <div style="font-family:JetBrains Mono,monospace;font-size:14px;font-weight:700;color:${s.chg>=0?'var(--grn)':'var(--red)'};">${sgn(s.chg)}${s.chg.toFixed(2)}%</div>
+        <div style="margin-top:5px;">
           <div style="height:3px;background:var(--bdr);border-radius:2px;overflow:hidden;width:60px;margin-left:auto;">
             <div style="height:100%;width:${Math.abs(s.chg)/mx*100}%;background:${s.chg>=0?'var(--grn)':'var(--red)'};border-radius:2px;"></div>
           </div>
         </div>
       </div>
-    </div>`;
-  };
+    </div>`};
 
   document.getElementById('slist').innerHTML=
     `<div class="sec-hdr" style="color:var(--grn);background:var(--grdim)">📈 TOP SECTORS — LONG BIAS</div>`+
