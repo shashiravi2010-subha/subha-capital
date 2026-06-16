@@ -21,7 +21,8 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install pyotp requests pytz
+        run: pip install pyotp requests pytz openpyxl
+
 
       - name: Generate market data
         env:
