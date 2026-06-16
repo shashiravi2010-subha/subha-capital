@@ -319,28 +319,25 @@ def main():
 
     def prev_close(s):
         q=Q.get(s,{})
-        # Angel One uses different field names — try all
-        for field in ['previousClose','prevClose','lastTradedPrice',
-                      'previousClosePrice','prev_close','prevclose']:
-            v=float(q.get(field,0) or 0)
-            if v>0: return round(v,2)
-        # Fallback: if ltp available use open as proxy for prev
-        op=float(q.get('open',0) or 0)
-        if op>0: return round(op,2)
-        return 0.0
+        # Angel One: "close" field = previous day closing price
+        v=float(q.get("close",0) or 0)
+        return round(v,2) if v>0 else 0.0
 
     def chg(s):
-        cur=px(s)
-        if cur<=0: return 0.0
-        prev=prev_close(s)
-        if prev<=0: return 0.0
-        return round((cur-prev)/prev*100,2)
+        q=Q.get(s,{})
+        # Use percentChange directly from Angel One API
+        pc=float(q.get("percentChange",0) or 0)
+        if pc!=0: return round(pc,2)
+        cur=px(s); prev=prev_close(s)
+        if cur>0 and prev>0: return round((cur-prev)/prev*100,2)
+        return 0.0
 
     def chg_pts(s):
-        cur=px(s)
-        prev=prev_close(s)
-        if cur<=0 or prev<=0: return 0.0
-        return round(cur-prev,2)
+        q=Q.get(s,{})
+        # Use netChange directly from Angel One API
+        nc=float(q.get("netChange",0) or 0)
+        if nc!=0: return round(nc,2)
+        return round(px(s)-prev_close(s),2)
 
     def hi(s):
         q=Q.get(s,{})
