@@ -478,6 +478,16 @@ def main():
          "BEARISH" if nifty_chg<-0.3 or (vix_px>0 and vix_px>16) else "NEUTRAL"
     longs,shorts=[],[]
 
+    def calc_vwap(candle_data):
+        """Calculate VWAP from daily candles"""
+        if not candle_data: return 0
+        cum_tpv=0; cum_vol=0
+        for c in candle_data[-20:]:  # Last 20 days
+            tp=(float(c[2])+float(c[3])+float(c[4]))/3
+            vol=float(c[5])
+            cum_tpv+=tp*vol; cum_vol+=vol
+        return round(cum_tpv/cum_vol,2) if cum_vol>0 else 0
+
     for sym,info in STOCKS.items():
         p=px(sym)
         if p<=0: continue
@@ -485,17 +495,26 @@ def main():
         closes=[x[4] for x in c] if c else [p]
         vols=[x[5] for x in c] if c else [1]
         h=hi(sym); l=lo(sym); op=open_px(sym)
+        vwap=calc_vwap(c)
 
         if info["sec"] in top4:
             e20=ema(closes,20); r=rsi_calc(closes); vr=vol_ratio(vols)
-            conds={"EMA20":p>e20,"SUPERT":supert(c),"RSI":50<=r<=70,
-                   "MACD":macd_bull(closes),"VOL":vr>=1.5,"PDH":p>h}
+            # VWAP replaces PDH — price above VWAP = institutional buying
+            vwap_long = p>vwap if vwap>0 else p>e20
+            conds={
+                "EMA20":p>e20,
+                "SUPERT":supert(c),
+                "RSI":50<=r<=70,
+                "MACD":macd_bull(closes),
+                "VOL":vr>=1.5,
+                "VWAP":vwap_long
+            }
             sc=sum(conds.values())
             en=round(h*1.002,2); sl=round(en*(1-info["slp"]/100),2); rp=en-sl
             if rp<=0: continue
             longs.append({
                 "sym":sym,"sec":info["sec"],"ltp":p,"chg":chg(sym),
-                "open":op,"high":h,"low":l,
+                "open":op,"high":h,"low":l,"vwap":vwap,
                 "score":sc,"rsi":r,"vol_ratio":vr,
                 "conds":{k:bool(v) for k,v in conds.items()},
                 "entry":en,"sl":sl,"t1":round(en+rp*1.5,2),"t2":round(en+rp*2.5,2),
@@ -505,14 +524,22 @@ def main():
 
         if info["sec"] in bot4:
             e20=ema(closes,20); r=rsi_calc(closes); vr=vol_ratio(vols)
-            conds={"EMA20":p<e20,"SUPERT":not supert(c),"RSI":30<=r<=50,
-                   "MACD":not macd_bull(closes),"VOL":vr>=1.5,"PDL":p<l}
+            # VWAP replaces PDL — price below VWAP = institutional selling
+            vwap_short = p<vwap if vwap>0 else p<e20
+            conds={
+                "EMA20":p<e20,
+                "SUPERT":not supert(c),
+                "RSI":30<=r<=50,
+                "MACD":not macd_bull(closes),
+                "VOL":vr>=1.5,
+                "VWAP":vwap_short
+            }
             sc=sum(conds.values())
             en=round(l*0.998,2); sl=round(en*(1+info["slp"]/100),2); rp=sl-en
             if rp<=0: continue
             shorts.append({
                 "sym":sym,"sec":info["sec"],"ltp":p,"chg":chg(sym),
-                "open":op,"high":h,"low":l,
+                "open":op,"high":h,"low":l,"vwap":vwap,
                 "score":sc,"rsi":r,"vol_ratio":vr,
                 "conds":{k:bool(v) for k,v in conds.items()},
                 "entry":en,"sl":sl,"t1":round(en-rp*1.5,2),"t2":round(en-rp*2.5,2),
