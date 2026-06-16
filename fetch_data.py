@@ -494,9 +494,43 @@ def main():
         if nc!=0: return round(nc,2)
         return round(ltp(s)-prev_close(s),2)
 
-    def day_high(s): return round(F(s,"high"),2) or ltp(s)
-    def day_low(s):  return round(F(s,"low"),2) or ltp(s)
-    def day_open(s): return round(F(s,"open"),2) or ltp(s)
+    def get_today_ohlc(sym, tok):
+        """Fetch today's intraday OHLC from Angel One"""
+        try:
+            ist_now = datetime.now(IST)
+            today = ist_now.strftime("%Y-%m-%d")
+            cd = get_candles(tok, STOCKS[sym]["token"], "ONE_MINUTE",
+                           f"{today} 09:15", f"{today} 15:30")
+            if cd.get("status") and cd.get("data"):
+                data = cd["data"]
+                if data:
+                    o = float(data[0][1])   # First candle open
+                    h = max(float(x[2]) for x in data)  # Day high
+                    l = min(float(x[3]) for x in data)  # Day low
+                    c = float(data[-1][4])  # Last candle close
+                    return {"open":round(o,2),"high":round(h,2),"low":round(l,2),"close":round(c,2)}
+        except: pass
+        return None
+
+    def day_high(s):
+        # Try quote first (works during market hours)
+        v=round(F(s,"high"),2)
+        if v>0: return v
+        # Fallback: use last daily candle high
+        c=candles.get(s,[])
+        return round(float(c[-1][2]),2) if c else ltp(s)
+
+    def day_low(s):
+        v=round(F(s,"low"),2)
+        if v>0: return v
+        c=candles.get(s,[])
+        return round(float(c[-1][3]),2) if c else ltp(s)
+
+    def day_open(s):
+        v=round(F(s,"open"),2)
+        if v>0: return v
+        c=candles.get(s,[])
+        return round(float(c[-1][1]),2) if c else ltp(s)
 
     # ── INDEX DATA ────────────────────────────────────────────────────
     nifty_ltp  = ltp("NIFTY50")
@@ -618,7 +652,17 @@ def main():
             c=candles.get(sym,[])
             closes=[float(x[4]) for x in c] if c else [p]
             vols=[float(x[5]) for x in c] if c else [1]
+
+            # Use quote OHLC if available (market hours)
+            # Else use last daily candle OHLC
             h=day_high(sym); l=day_low(sym); op=day_open(sym)
+
+            # If high/low still = ltp (fallback), use last candle
+            if h==p and c:
+                h=round(float(c[-1][2]),2)
+                l=round(float(c[-1][3]),2)
+                op=round(float(c[-1][1]),2)
+                print(f"  {sym}: Using candle OHLC H={h} L={l} O={op}")
             vwap_val=calc_vwap(c)
             e20=ema(closes,20); r=rsi(closes); vr=vol_ratio(vols)
             macd_b=macd_bull(closes); st_b=st_bull(c)
