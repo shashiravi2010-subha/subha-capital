@@ -611,10 +611,10 @@ function render(d,ai){
   const rckCard=(s)=>{
     const isL=s.side==='LONG';
     const sc=s.score>=5?isL?'var(--grn)':'var(--red)':s.score>=3?'var(--gold)':'var(--mut)';
-    const ckeys=isL?['EMA20','SUPERT','RSI','MACD','VOL','PDH']:['EMA20','SUPERT','RSI','MACD','VOL','PDL'];
+    const ckeys=isL?['EMA20','SUPERT','RSI','MACD','VOL','VWAP']:['EMA20','SUPERT','RSI','MACD','VOL','VWAP'];
     const clbls=isL?
-      {EMA20:'EMA↑',SUPERT:'ST🟢',RSI:`RSI ${s.rsi}`,MACD:'MACD↑',VOL:`${s.vol_ratio}x`,PDH:'PDH✓'}:
-      {EMA20:'EMA↓',SUPERT:'ST🔴',RSI:`RSI ${s.rsi}`,MACD:'MACD↓',VOL:`${s.vol_ratio}x`,PDL:'PDL✓'};
+      {EMA20:'EMA↑',SUPERT:'ST🟢',RSI:`RSI ${s.rsi}`,MACD:'MACD↑',VOL:`${s.vol_ratio}x`,VWAP:`VWAP↑${s.vwap?'₹'+fmt(s.vwap):''}` }:
+      {EMA20:'EMA↓',SUPERT:'ST🔴',RSI:`RSI ${s.rsi}`,MACD:'MACD↓',VOL:`${s.vol_ratio}x`,VWAP:`VWAP↓${s.vwap?'₹'+fmt(s.vwap):''}` };
     return `<div class="rck-card" onclick="openChart('${s.sym}')" style="border-left:3px solid ${sc};">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
         <div>
@@ -676,6 +676,11 @@ function render(d,ai){
           <div class="gtt-item"><span class="gtt-label">TARGET</span><span class="gtt-val" style="color:var(--grn);">₹${fmt(s.t1)}</span></div>
         </div>
         <div style="font-size:9px;color:var(--mut);">Qty: <strong style="color:${sc}">${s.qty} shares</strong> · Risk: ₹${Math.abs(risk).toFixed(1)}/share · T2: ₹${fmt(s.t2)} · Max loss: ₹${Math.round(Math.abs(risk)*s.qty)}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+        <span style="font-size:8px;padding:3px 8px;border-radius:7px;font-weight:600;background:rgba(77,159,255,0.1);color:var(--blu);border:1px solid rgba(77,159,255,0.2);">VWAP: ₹${s.vwap?fmt(s.vwap):'—'}</span>
+        <span style="font-size:8px;padding:3px 8px;border-radius:7px;font-weight:600;background:${isL?'rgba(0,212,160,0.1)':'rgba(255,69,96,0.1)'};color:${sc};border:1px solid ${isL?'rgba(0,212,160,0.2)':'rgba(255,69,96,0.2)'};">${isL?'PRICE > VWAP ✓':'PRICE < VWAP ✓'}</span>
+        <span style="font-size:8px;padding:3px 8px;border-radius:7px;font-weight:600;background:rgba(240,165,0,0.1);color:var(--gold);border:1px solid rgba(240,165,0,0.2);">RSI: ${s.rsi} · Vol: ${s.vol_ratio}x</span>
       </div>
       <div class="chart-hint">📊 Tap to open live 15-min chart</div>
     </div>`;};
