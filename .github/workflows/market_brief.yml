@@ -2,8 +2,12 @@ name: SUBHA CAPITAL Market Brief
 
 on:
   schedule:
-    - cron: '15 3 * * 1-5'
-  workflow_dispatch:
+    # All times UTC = IST - 5:30
+    - cron: '15 3 * * 1-5'   # 8:45 AM IST  — Gift Nifty + Pre-market
+    - cron: '30 3 * * 1-5'   # 9:00 AM IST  — Pre-open + Sector scan
+    - cron: '0 4 * * 1-5'    # 9:30 AM IST  — ORB + Stock selection
+    - cron: '15 4 * * 1-5'   # 9:45 AM IST  — FINNIFTY ORB + Options signal
+  workflow_dispatch:           # Manual trigger
 
 jobs:
   generate:
@@ -23,7 +27,6 @@ jobs:
       - name: Install dependencies
         run: pip install pyotp requests pytz openpyxl
 
-
       - name: Generate market data
         env:
           ANGEL_CLIENT_ID: ${{ secrets.ANGEL_CLIENT_ID }}
@@ -36,6 +39,6 @@ jobs:
         run: |
           git config user.name "SUBHA CAPITAL Bot"
           git config user.email "bot@subhacapital.com"
-          git add data.json
-          git diff --staged --quiet || git commit -m "Market data update"
+          git add data.json trading_journal.xlsx
+          git diff --staged --quiet || git commit -m "Market data $(date '+%d-%b-%Y %H:%M IST')"
           git push
