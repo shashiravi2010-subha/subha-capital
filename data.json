@@ -1,5 +1,7 @@
 {
-  "generated_at": "16 Jun 2026 05:32 PM IST",
+  "generated_at": "16 Jun 2026 07:42 PM IST",
+  "phase": "CLOSED",
+  "phase_label": "Market Closed \u2014 EOD Data",
   "market_status": "CLOSED",
   "is_live": true,
   "market": {
@@ -10,11 +12,64 @@
       "prev": 23853.9
     },
     "vix": {
-      "ltp": 0,
+      "ltp": 13.36,
       "chg": 0,
-      "prev": 0
+      "prev": 0.0,
+      "status": "13-16 Caution",
+      "source": "Yahoo Finance"
     },
     "bias": "BULLISH"
+  },
+  "gift_nifty": {
+    "ltp": 0,
+    "chg": 0,
+    "gap": 0,
+    "gap_pct": 0,
+    "bias": "\u2014",
+    "source": "\u2014"
+  },
+  "pre_market": {
+    "top_gainers": [
+      {
+        "sym": "BAJAJFINSV",
+        "ltp": 1787.3,
+        "chg": 2.12,
+        "sec": "FINANCE"
+      },
+      {
+        "sym": "BAJFINANCE",
+        "ltp": 959.65,
+        "chg": 1.84,
+        "sec": "FINANCE"
+      },
+      {
+        "sym": "TCS",
+        "ltp": 2199.0,
+        "chg": 1.71,
+        "sec": "IT"
+      }
+    ],
+    "top_losers": [
+      {
+        "sym": "HDFCLIFE",
+        "ltp": 574.4,
+        "chg": -1.17,
+        "sec": "FINANCE"
+      },
+      {
+        "sym": "INDUSINDBK",
+        "ltp": 926.0,
+        "chg": -0.77,
+        "sec": "BANKING"
+      },
+      {
+        "sym": "SBIN",
+        "ltp": 1015.3,
+        "chg": -0.54,
+        "sec": "BANKING"
+      }
+    ],
+    "analysis": "Flat open expected. BULLISH bias."
   },
   "finnifty": {
     "ltp": 26442.3,
@@ -488,7 +543,8 @@
       "gtt_limit": 633.89,
       "qty": 157,
       "side": "LONG",
-      "bias": "BULLISH"
+      "bias": "BULLISH",
+      "phase": "CLOSED"
     },
     {
       "sym": "BAJAJFINSV",
@@ -518,7 +574,8 @@
       "gtt_limit": 1807.21,
       "qty": 61,
       "side": "LONG",
-      "bias": "BULLISH"
+      "bias": "BULLISH",
+      "phase": "CLOSED"
     },
     {
       "sym": "CHOLAFIN",
@@ -548,7 +605,8 @@
       "gtt_limit": 1690.76,
       "qty": 59,
       "side": "LONG",
-      "bias": "BULLISH"
+      "bias": "BULLISH",
+      "phase": "CLOSED"
     },
     {
       "sym": "RECLTD",
@@ -578,7 +636,8 @@
       "gtt_limit": 377.08,
       "qty": 265,
       "side": "LONG",
-      "bias": "BULLISH"
+      "bias": "BULLISH",
+      "phase": "CLOSED"
     },
     {
       "sym": "MPHASIS",
@@ -608,7 +667,8 @@
       "gtt_limit": 2356.05,
       "qty": 42,
       "side": "LONG",
-      "bias": "BULLISH"
+      "bias": "BULLISH",
+      "phase": "CLOSED"
     }
   ],
   "short": [
@@ -640,7 +700,8 @@
       "gtt_limit": 9872.32,
       "qty": 11,
       "side": "SHORT",
-      "bias": "BULLISH"
+      "bias": "BULLISH",
+      "phase": "CLOSED"
     },
     {
       "sym": "DRREDDY",
@@ -670,7 +731,8 @@
       "gtt_limit": 1265.29,
       "qty": 98,
       "side": "SHORT",
-      "bias": "BULLISH"
+      "bias": "BULLISH",
+      "phase": "CLOSED"
     },
     {
       "sym": "AUROPHARMA",
@@ -700,7 +762,8 @@
       "gtt_limit": 1387.13,
       "qty": 71,
       "side": "SHORT",
-      "bias": "BULLISH"
+      "bias": "BULLISH",
+      "phase": "CLOSED"
     },
     {
       "sym": "UPL",
@@ -730,7 +793,8 @@
       "gtt_limit": 611.26,
       "qty": 148,
       "side": "SHORT",
-      "bias": "BULLISH"
+      "bias": "BULLISH",
+      "phase": "CLOSED"
     },
     {
       "sym": "HINDALCO",
@@ -760,7 +824,8 @@
       "gtt_limit": 967.09,
       "qty": 93,
       "side": "SHORT",
-      "bias": "BULLISH"
+      "bias": "BULLISH",
+      "phase": "CLOSED"
     }
   ],
   "capital": 100000,
