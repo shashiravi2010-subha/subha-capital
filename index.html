@@ -262,20 +262,24 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--txt
       </div>
     </div>
 
-    <!-- 4. ROCKERS -->
-    <div id="s4" style="display:none">
+    <!-- 4. ROCKERS — FULL WIDTH -->
+    <div class="full" id="s4" style="display:none">
       <div class="slab">4 · ROCKERS SCREENER — NIFTY 100</div>
       <div class="crd">
         <div class="row" style="margin-bottom:10px">
           <div class="ctit" style="margin:0">6-CONDITION VWAP SCAN · TAP FOR CHART</div>
           <div id="rck-bdg" style="font-size:8px;padding:3px 9px;border-radius:8px;font-weight:700;background:rgba(240,165,0,0.1);color:var(--gold);border:1px solid rgba(240,165,0,0.2)">—</div>
         </div>
-        <div id="rcklist"></div>
+        <!-- LONG and SHORT side by side inside ROCKERS -->
+        <div class="cand-wrap">
+          <div id="rck-long"></div>
+          <div id="rck-short"></div>
+        </div>
       </div>
     </div>
 
-    <!-- 5. TRADE CANDIDATES -->
-    <div id="s5" style="display:none">
+    <!-- 5. TRADE CANDIDATES — FULL WIDTH with Long/Short side by side -->
+    <div class="full" id="s5" style="display:none">
       <div class="slab">5 · TRADE CANDIDATES + GTT LEVELS</div>
       <div class="crd">
         <div class="row" style="margin-bottom:10px">
@@ -295,8 +299,8 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--txt
       </div>
     </div>
 
-    <!-- 6. CHECKLIST -->
-    <div id="s6" style="display:none">
+    <!-- 6. CHECKLIST — FULL WIDTH -->
+    <div class="full" id="s6" style="display:none">
       <div class="slab">6 · ENTRY CHECKLIST</div>
       <div class="clcard">
         <div class="cltit">⏱ FOLLOW THIS EVERY TRADING DAY</div>
@@ -304,8 +308,8 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--txt
       </div>
     </div>
 
-    <!-- 7. RISK RULES -->
-    <div id="s7" style="display:none">
+    <!-- 7. RISK RULES — FULL WIDTH -->
+    <div class="full" id="s7" style="display:none">
       <div class="slab">7 · RISK RULES</div>
       <div class="crd"><div class="rgrid" id="rgrid"></div></div>
     </div>
@@ -523,10 +527,11 @@ function render(d,ai){
       <div class="hint">📊 Tap to open live 15-min TradingView chart</div>
     </div>`;};
 
-  $('rcklist').innerHTML=
-    `<div class="shdr" style="color:var(--grn);background:var(--grdim)">📈 LONG ROCKERS</div>`+
-    (longs.length?longs.map(rckCard).join(''):'<div style="color:var(--mut);font-size:11px;padding:10px;text-align:center">No strong long setups today</div>')+
-    `<div class="shdr" style="color:var(--red);background:var(--rdim);margin-top:8px">📉 SHORT ROCKERS</div>`+
+  $('rck-long').innerHTML=
+    `<div class="shdr" style="color:var(--grn);background:var(--grdim)">📈 LONG ROCKERS — TOP SECTORS</div>`+
+    (longs.length?longs.map(rckCard).join(''):'<div style="color:var(--mut);font-size:11px;padding:10px;text-align:center">No strong long setups today</div>');
+  $('rck-short').innerHTML=
+    `<div class="shdr" style="color:var(--red);background:var(--rdim)">📉 SHORT ROCKERS — WEAK SECTORS</div>`+
     (shorts.length?shorts.map(rckCard).join(''):'<div style="color:var(--mut);font-size:11px;padding:10px;text-align:center">No strong short setups today</div>');
   sh('s4');
 
