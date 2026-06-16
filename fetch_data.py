@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-SUBHA CAPITAL — Market Data Fetcher v6
-Nifty 100 Universe + Excel Backtest Journal
+SUBHA CAPITAL — Market Data Fetcher FINAL
+Bug-free version for production
+Nifty 100 Universe + FINNIFTY ORB + Excel Journal
 """
 
 import os,json,math,pyotp,requests,pytz,time,openpyxl
-from openpyxl.styles import PatternFill,Font,Alignment,Border,Side
+from openpyxl.styles import PatternFill,Font,Alignment
 from openpyxl.utils import get_column_letter
 from datetime import datetime,timedelta
 
@@ -18,7 +19,7 @@ RISK_PCT    = 1.0
 IST         = pytz.timezone("Asia/Kolkata")
 BASE        = "https://apiconnect.angelone.in"
 
-# Nifty 100 Universe
+# ── NIFTY 100 UNIVERSE ────────────────────────────────────────────────
 STOCKS = {
     "HDFCBANK":   {"token":"1333",  "sec":"BANKING","slp":0.9},
     "ICICIBANK":  {"token":"4963",  "sec":"BANKING","slp":0.85},
@@ -113,11 +114,16 @@ STOCKS = {
     "INDUSTOWER": {"token":"17491", "sec":"TELECOM","slp":1.0},
 }
 
-INDICES = {"NIFTY50":"26000","INDIAVIX":"26017","FINNIFTY":"26037"}
+# Indices — only reliable ones
+INDICES = {
+    "NIFTY50":  "26000",
+    "FINNIFTY": "26037",
+    # VIX excluded — Angel One returns empty data
+}
 
 SECTOR_STOCKS = {
     "BANKING":  ["HDFCBANK","ICICIBANK","SBIN","AXISBANK","KOTAKBANK","INDUSINDBK"],
-    "FINANCE":  ["BAJFINANCE","BAJAJFINSV","CHOLAFIN","PFC","RECLTD"],
+    "FINANCE":  ["BAJFINANCE","BAJAJFINSV","CHOLAFIN","PFC","RECLTD","MUTHOOTFIN"],
     "IT":       ["INFY","TCS","WIPRO","HCLTECH","TECHM","LTIM"],
     "AUTO":     ["MARUTI","MM","TATAMOTORS","BAJAJ-AUTO","HEROMOTOCO"],
     "PHARMA":   ["SUNPHARMA","DRREDDY","CIPLA","DIVISLAB","AUROPHARMA"],
@@ -131,6 +137,7 @@ SECTOR_STOCKS = {
     "TELECOM":  ["BHARTIARTL","INDUSTOWER"],
 }
 
+# ── API HELPERS ───────────────────────────────────────────────────────
 def hdrs(tok=None):
     h={"Content-Type":"application/json","Accept":"application/json",
        "X-UserType":"USER","X-SourceID":"WEB",
@@ -147,315 +154,273 @@ def login():
         headers=hdrs(),timeout=15)
     d=r.json()
     if d.get("status") and d.get("data",{}).get("jwtToken"):
-        print("✅ Login OK"); return d["data"]["jwtToken"]
+        print("✅ Login OK")
+        return d["data"]["jwtToken"]
     raise Exception(f"Login failed: {d.get('message')}")
 
-def get_quotes(tok,tokens):
-    # Batch in groups of 50
+def get_quotes(tok, tokens):
+    """Batch fetch quotes — 50 per call"""
     all_data=[]
     for i in range(0,len(tokens),50):
         batch=tokens[i:i+50]
-        r=requests.post(f"{BASE}/rest/secure/angelbroking/market/v1/quote/",
-            json={"mode":"FULL","exchangeTokens":{"NSE":batch}},
-            headers=hdrs(tok),timeout=15)
-        d=r.json()
-        if d.get("status") and d.get("data"):
-            all_data.extend(d["data"].get("fetched",[]))
+        try:
+            r=requests.post(f"{BASE}/rest/secure/angelbroking/market/v1/quote/",
+                json={"mode":"FULL","exchangeTokens":{"NSE":batch}},
+                headers=hdrs(tok),timeout=15)
+            d=r.json()
+            if d.get("status") and d.get("data"):
+                all_data.extend(d["data"].get("fetched",[]))
+        except Exception as e:
+            print(f"Quote batch error: {e}")
         time.sleep(0.3)
     return all_data
 
-def get_candles(tok,sym_tok,interval,fr,to):
-    r=requests.post(f"{BASE}/rest/secure/angelbroking/historical/v1/getCandleData",
-        json={"exchange":"NSE","symboltoken":sym_tok,"interval":interval,
-              "fromdate":fr,"todate":to},
-        headers=hdrs(tok),timeout=15)
-    return r.json()
+def get_candles(tok, sym_tok, interval, fr, to):
+    try:
+        r=requests.post(f"{BASE}/rest/secure/angelbroking/historical/v1/getCandleData",
+            json={"exchange":"NSE","symboltoken":sym_tok,"interval":interval,
+                  "fromdate":fr,"todate":to},
+            headers=hdrs(tok),timeout=15)
+        return r.json()
+    except:
+        return {}
 
-def ema(p,n):
-    if not p: return 0
-    if len(p)<n: return p[-1]
-    k=2/(n+1); e=sum(p[:n])/n
-    for x in p[n:]: e=x*k+e*(1-k)
+# ── INDICATORS ────────────────────────────────────────────────────────
+def ema(prices, n):
+    if not prices: return 0
+    if len(prices)<n: return prices[-1]
+    k=2/(n+1); e=sum(prices[:n])/n
+    for p in prices[n:]: e=p*k+e*(1-k)
     return round(e,2)
 
-def rsi_calc(p,n=14):
-    if len(p)<n+1: return 50
+def rsi(prices, n=14):
+    if len(prices)<n+1: return 50
     g,l=[],[]
-    for i in range(1,len(p)):
-        d=p[i]-p[i-1]; g.append(max(d,0)); l.append(max(-d,0))
+    for i in range(1,len(prices)):
+        d=prices[i]-prices[i-1]
+        g.append(max(d,0)); l.append(max(-d,0))
     ag=sum(g[:n])/n; al=sum(l[:n])/n
     for i in range(n,len(g)):
         ag=(ag*(n-1)+g[i])/n; al=(al*(n-1)+l[i])/n
     return 100 if al==0 else round(100-100/(1+ag/al))
 
-def macd_bull(p):
-    if len(p)<26: return True
-    k12,k26=2/13,2/27; e12=e26=p[0]
-    for x in p: e12=x*k12+e12*(1-k12); e26=x*k26+e26*(1-k26)
+def macd_bull(prices):
+    if len(prices)<26: return True
+    k12,k26=2/13,2/27; e12=e26=prices[0]
+    for p in prices:
+        e12=p*k12+e12*(1-k12)
+        e26=p*k26+e26*(1-k26)
     return e12>e26
 
-def supert(c):
-    if not c: return True
-    return c[-1][4]>(c[-1][2]+c[-1][3])/2
+def supertrend_bull(candles):
+    if not candles: return True
+    c=candles[-1]
+    return float(c[4])>(float(c[2])+float(c[3]))/2
 
-def vol_ratio(v):
-    if len(v)<2: return 1.0
-    avg=sum(v[:-1])/len(v[:-1])
-    return round(v[-1]/avg,1) if avg>0 else 1.0
+def vol_ratio(vols):
+    if len(vols)<2: return 1.0
+    avg=sum(vols[:-1])/len(vols[:-1])
+    return round(vols[-1]/avg,1) if avg>0 else 1.0
 
-def update_excel(signals,ist):
-    """Update trading journal Excel file"""
+def calc_vwap(candles):
+    if not candles: return 0
+    cum_tpv=0; cum_vol=0
+    for c in candles[-20:]:
+        tp=(float(c[2])+float(c[3])+float(c[4]))/3
+        vol=float(c[5])
+        cum_tpv+=tp*vol; cum_vol+=vol
+    return round(cum_tpv/cum_vol,2) if cum_vol>0 else 0
+
+# ── EXCEL JOURNAL ─────────────────────────────────────────────────────
+def update_excel(signals, ist):
     fname="trading_journal.xlsx"
-    
-    # Load or create workbook
     try:
         wb=openpyxl.load_workbook(fname)
         ws=wb.active
     except:
         wb=openpyxl.Workbook()
         ws=wb.active
-        ws.title="SUBHA CAPITAL Journal"
-        
-        # Header styling
-        headers=["Date","Stock","Sector","Side","ROCKERS Score",
-                 "Pre-Market Price","Day Open","Day High","Day Low",
-                 "GTT Trigger","GTT Limit","Stop Loss","Target 1","Target 2",
-                 "Qty","Max Risk ₹","Bias","Market"]
-        
-        hdr_fill=PatternFill(start_color="0D1221",end_color="0D1221",fill_type="solid")
-        hdr_font=Font(bold=True,color="F0A500",size=10)
-        
+        ws.title="SUBHA CAPITAL"
+        headers=["Date","Stock","Sector","Side","Score",
+                 "Pre-Mkt Price","Open","High","Low","VWAP",
+                 "GTT Trigger","Limit Price","Stop Loss","Target 1","Target 2",
+                 "Qty","Max Risk ₹","Bias","Result","P&L ₹","Notes"]
+        hfill=PatternFill(start_color="0D1221",end_color="0D1221",fill_type="solid")
+        hfont=Font(bold=True,color="F0A500",size=10)
         for col,h in enumerate(headers,1):
             cell=ws.cell(row=1,column=col,value=h)
-            cell.fill=hdr_fill
-            cell.font=hdr_font
+            cell.fill=hfill; cell.font=hfont
             cell.alignment=Alignment(horizontal='center',vertical='center')
-        
-        ws.row_dimensions[1].height=25
-        
-        # Column widths
-        widths=[12,12,10,8,14,16,10,10,10,12,10,12,10,10,6,10,10,10]
+        ws.row_dimensions[1].height=28
+        widths=[12,12,10,8,8,14,10,10,10,10,12,12,12,10,10,6,10,10,10,10,15]
         for i,w in enumerate(widths,1):
             ws.column_dimensions[get_column_letter(i)].width=w
 
-    # Add today's signals
     date_str=ist.strftime("%d-%b-%Y")
-    
     for s in signals:
         isL=s["side"]=="LONG"
+        risk=abs(s["entry"]-s["sl"])
         row=[
-            date_str,
-            s["sym"],
-            s["sec"],
-            s["side"],
-            f"{s['score']}/6",
-            s["ltp"],
-            "",  # Day Open — fill after market
-            "",  # Day High
-            "",  # Day Low
-            s.get("gtt_trigger",s["entry"]),
-            s.get("gtt_limit",s["entry"]),
-            s["sl"],
-            s["t1"],
-            s["t2"],
-            s["qty"],
-            round(abs(s["entry"]-s["sl"])*s["qty"],2),
-            s.get("bias",""),
-            "NSE F&O",
+            date_str, s["sym"], s["sec"], s["side"], f"{s['score']}/6",
+            s["ltp"], s.get("open",""), s.get("high",""), s.get("low",""), s.get("vwap",""),
+            s.get("gtt_trigger",s["entry"]), s.get("gtt_limit",s["entry"]),
+            s["sl"], s["t1"], s["t2"],
+            s["qty"], round(risk*s["qty"],2), s.get("bias",""),
+            "","","",  # Result, P&L, Notes — fill manually
         ]
-        
-        # Row styling
-        row_num=ws.max_row+1
-        fill_color="002D1C" if isL else "2D0010"
-        row_fill=PatternFill(start_color=fill_color,end_color=fill_color,fill_type="solid")
-        
+        rn=ws.max_row+1
+        fc="002D1C" if isL else "2D0010"
+        rf=PatternFill(start_color=fc,end_color=fc,fill_type="solid")
         for col,val in enumerate(row,1):
-            cell=ws.cell(row=row_num,column=col,value=val)
-            cell.fill=row_fill
-            cell.alignment=Alignment(horizontal='center')
-            # Color code important columns
-            if col==4:  # Side
-                cell.font=Font(color="00D4A0" if isL else "FF4560",bold=True)
-            elif col in [10,11]:  # GTT levels
-                cell.font=Font(color="F0A500",bold=True)
-            elif col==12:  # SL
-                cell.font=Font(color="FF4560",bold=True)
-            elif col in [13,14]:  # Targets
-                cell.font=Font(color="00D4A0",bold=True)
-    
+            cell=ws.cell(row=rn,column=col,value=val)
+            cell.fill=rf; cell.alignment=Alignment(horizontal='center')
+            if col==4: cell.font=Font(color="00D4A0" if isL else "FF4560",bold=True)
+            elif col in [11,12]: cell.font=Font(color="F0A500",bold=True)
+            elif col==13: cell.font=Font(color="FF4560",bold=True)
+            elif col in [14,15]: cell.font=Font(color="00D4A0",bold=True)
     wb.save(fname)
-    print(f"✅ Excel updated: {fname} ({ws.max_row-1} signals total)")
-    return fname
+    print(f"✅ Excel: {fname} — {ws.max_row-1} signals total")
 
+# ── MAIN ──────────────────────────────────────────────────────────────
 def main():
     ist=datetime.now(IST)
-    print(f"Time: {ist.strftime('%Y-%m-%d %H:%M IST')}")
-    mkt_open=ist.hour<15 or (ist.hour==15 and ist.minute<30)
+    print(f"═══ SUBHA CAPITAL — {ist.strftime('%d %b %Y %H:%M IST')} ═══")
+    mkt_open=(ist.hour>9 or (ist.hour==9 and ist.minute>=15)) and \
+             (ist.hour<15 or (ist.hour==15 and ist.minute<30))
     print(f"Stocks: {len(STOCKS)} | Market: {'OPEN' if mkt_open else 'CLOSED'}")
 
+    # ── LOGIN ─────────────────────────────────────────────────────────
     jwt=login()
 
-    # Batch fetch all quotes
+    # ── FETCH ALL QUOTES ──────────────────────────────────────────────
     stk_toks=[v["token"] for v in STOCKS.values()]
     idx_toks=list(INDICES.values())
-    all_fetched=get_quotes(jwt,stk_toks+idx_toks)
-    
+    fetched=get_quotes(jwt, stk_toks+idx_toks)
+
     Q={}
-    for q in all_fetched:
+    for q in fetched:
         t=q.get("symbolToken","")
         for sym,info in STOCKS.items():
             if info["token"]==t: Q[sym]=q; break
         for idx,tok in INDICES.items():
             if tok==t: Q[idx]=q; break
-    print(f"Quotes: {len(Q)}/{len(STOCKS)}")
+    print(f"Quotes: {len(Q)}/{len(STOCKS)+len(INDICES)}")
 
-    def px(s):
-        q=Q.get(s,{})
-        # Try ltp first, then close, then open
-        for field in ['ltp','close','open']:
-            v=float(q.get(field,0) or 0)
-            if v>0: return round(v,2)
-        return 0.0
+    # ── PRICE FUNCTIONS — using correct Angel One fields ──────────────
+    def F(s,field,default=0):
+        """Safe float extraction from quote"""
+        return float(Q.get(s,{}).get(field,default) or default)
+
+    def ltp(s):
+        """Current price — ltp if available else close"""
+        v=F(s,"ltp")
+        return round(v,2) if v>0 else round(F(s,"close"),2)
 
     def prev_close(s):
-        q=Q.get(s,{})
-        # Angel One: "close" field = previous day closing price
-        v=float(q.get("close",0) or 0)
-        return round(v,2) if v>0 else 0.0
+        """Previous day close — Angel One returns in 'close' field"""
+        return round(F(s,"close"),2)
 
-    def chg(s):
-        q=Q.get(s,{})
-        # Use percentChange directly from Angel One API
-        pc=float(q.get("percentChange",0) or 0)
+    def pct_chg(s):
+        """% change — use percentChange directly from Angel One"""
+        pc=F(s,"percentChange")
         if pc!=0: return round(pc,2)
-        cur=px(s); prev=prev_close(s)
-        if cur>0 and prev>0: return round((cur-prev)/prev*100,2)
+        # Fallback calculation
+        cur=ltp(s); prev=prev_close(s)
+        if cur>0 and prev>0 and cur!=prev:
+            return round((cur-prev)/prev*100,2)
         return 0.0
 
-    def chg_pts(s):
-        q=Q.get(s,{})
-        # Use netChange directly from Angel One API
-        nc=float(q.get("netChange",0) or 0)
+    def pts_chg(s):
+        """Points change — use netChange directly from Angel One"""
+        nc=F(s,"netChange")
         if nc!=0: return round(nc,2)
-        return round(px(s)-prev_close(s),2)
+        return round(ltp(s)-prev_close(s),2)
 
-    def hi(s):
-        q=Q.get(s,{})
-        v=float(q.get("high",0) or 0)
-        return v if v>0 else px(s)
+    def day_high(s): return round(F(s,"high"),2) or ltp(s)
+    def day_low(s):  return round(F(s,"low"),2) or ltp(s)
+    def day_open(s): return round(F(s,"open"),2) or ltp(s)
 
-    def lo(s):
-        q=Q.get(s,{})
-        v=float(q.get("low",0) or 0)
-        return v if v>0 else px(s)
+    # ── INDEX DATA ────────────────────────────────────────────────────
+    nifty_ltp   = ltp("NIFTY50")
+    nifty_chg   = pct_chg("NIFTY50")
+    nifty_pts   = pts_chg("NIFTY50")
+    nifty_prev  = prev_close("NIFTY50")
+    fn_ltp      = ltp("FINNIFTY")
+    fn_chg      = pct_chg("FINNIFTY")
+    fn_pts      = pts_chg("FINNIFTY")
+    fn_prev     = prev_close("FINNIFTY")
 
-    def open_px(s):
-        q=Q.get(s,{})
-        v=float(q.get("open",0) or 0)
-        return v if v>0 else px(s)
+    print(f"Nifty: {nifty_ltp} | chg: {nifty_chg}% | pts: {nifty_pts} | prev: {nifty_prev}")
+    print(f"FINNIFTY: {fn_ltp} | chg: {fn_chg}% | pts: {fn_pts} | prev: {fn_prev}")
 
-    # Debug — print ALL fields for NIFTY50 to find correct field names
-    nifty_q = Q.get("NIFTY50",{})
-    vix_q = Q.get("INDIAVIX",{})
-    fn_q = Q.get("FINNIFTY",{})
-    print(f"NIFTY50 ALL FIELDS: {json.dumps(nifty_q)[:500]}")
-    print(f"VIX ALL FIELDS: {json.dumps(vix_q)[:300]}")
-    print(f"FINNIFTY ALL FIELDS: {json.dumps(fn_q)[:300]}")
+    # Market bias
+    bias="BULLISH" if nifty_chg>0.3 else "BEARISH" if nifty_chg<-0.3 else "NEUTRAL"
 
-    nifty_px=px("NIFTY50"); nifty_chg=chg("NIFTY50"); nifty_pts=chg_pts("NIFTY50")
-    nifty_prev=prev_close("NIFTY50")
-    vix_px=px("INDIAVIX"); vix_chg=chg("INDIAVIX"); vix_prev=prev_close("INDIAVIX")
-    fn_px=px("FINNIFTY"); fn_chg=chg("FINNIFTY"); fn_pts=chg_pts("FINNIFTY")
-    fn_prev=prev_close("FINNIFTY")
-    print(f"Nifty: {nifty_px} prev={nifty_prev} chg={nifty_chg}% pts={nifty_pts}")
-    print(f"VIX: {vix_px} prev={vix_prev} chg={vix_chg}%")
-    print(f"FINNIFTY: {fn_px} prev={fn_prev} chg={fn_chg}%")
+    # ── FINNIFTY ATM + ORB ────────────────────────────────────────────
+    fn_atm=round(fn_ltp/50)*50 if fn_ltp>0 else 0
+    fn_orb={"open":0,"high":0,"low":0,"close":0,"signal":"WAIT",
+            "ce_prem":0,"pe_prem":0}
 
-    # FINNIFTY ATM Strike (nearest 50)
-    fn_atm = round(fn_px/50)*50 if fn_px>0 else 0
-
-    # FINNIFTY 30-min ORB candle — try multiple intervals
-    fn_orb = {"orb_open":0,"orb_high":0,"orb_low":0,"orb_close":0,"signal":"WAIT"}
     try:
-        fn_date = ist.strftime("%Y-%m-%d")
-        # Try THIRTY_MINUTE first, then fallback to ONE_MINUTE aggregated
-        for interval in ["THIRTY_MINUTE","FIFTEEN_MINUTE"]:
-            fn_candles = get_candles(jwt,"26037",interval,
-                                     f"{fn_date} 09:00",f"{fn_date} 10:30")
-            print(f"FINNIFTY candles ({interval}): status={fn_candles.get('status')} count={len(fn_candles.get('data',[]))}")
-            if fn_candles.get("status") and fn_candles.get("data"):
-                c = fn_candles["data"]
-                if len(c)>=1:
-                    if interval=="THIRTY_MINUTE":
-                        # Single 30-min candle
-                        first=c[0]
-                    else:
-                        # Two 15-min candles = 9:15 + 9:30 = combine for 30-min ORB
-                        opens=[float(x[1]) for x in c[:2]]
-                        highs=[float(x[2]) for x in c[:2]]
-                        lows=[float(x[3]) for x in c[:2]]
-                        closes=[float(x[4]) for x in c[:2]]
-                        first=[c[0][0],opens[0],max(highs),min(lows),closes[-1],0]
-                    fn_orb["orb_open"]  = round(float(first[1]),2)
-                    fn_orb["orb_high"]  = round(float(first[2]),2)
-                    fn_orb["orb_low"]   = round(float(first[3]),2)
-                    fn_orb["orb_close"] = round(float(first[4]),2)
-                    # Signal
-                    if fn_px>0 and fn_orb["orb_high"]>0:
-                        if fn_px > fn_orb["orb_high"]:
-                            fn_orb["signal"] = "CE"
-                        elif fn_px < fn_orb["orb_low"]:
-                            fn_orb["signal"] = "PE"
-                        else:
-                            fn_orb["signal"] = "MONITOR"
-                    print(f"ORB: O={fn_orb['orb_open']} H={fn_orb['orb_high']} L={fn_orb['orb_low']} C={fn_orb['orb_close']} Signal={fn_orb['signal']}")
-                    break
+        fn_date=ist.strftime("%Y-%m-%d")
+        # Try 30-min candle first
+        for interval,label in [("THIRTY_MINUTE","30min"),("FIFTEEN_MINUTE","15min")]:
+            cd=get_candles(jwt,"26037",interval,
+                          f"{fn_date} 09:00",f"{fn_date} 10:30")
+            candle_list=cd.get("data",[]) if cd.get("status") else []
+            print(f"FINNIFTY {label}: {len(candle_list)} candles")
+            if candle_list:
+                if interval=="THIRTY_MINUTE":
+                    c=candle_list[0]
+                    fn_orb["open"]  = round(float(c[1]),2)
+                    fn_orb["high"]  = round(float(c[2]),2)
+                    fn_orb["low"]   = round(float(c[3]),2)
+                    fn_orb["close"] = round(float(c[4]),2)
+                else:
+                    # Combine first 2 x 15min candles = 30min ORB
+                    c2=candle_list[:2]
+                    fn_orb["open"]  = round(float(c2[0][1]),2)
+                    fn_orb["high"]  = round(max(float(x[2]) for x in c2),2)
+                    fn_orb["low"]   = round(min(float(x[3]) for x in c2),2)
+                    fn_orb["close"] = round(float(c2[-1][4]),2)
+                # Signal
+                ist_hr=ist.hour; ist_min=ist.minute
+                orb_formed=ist_hr>9 or (ist_hr==9 and ist_min>=45)
+                if orb_formed and fn_ltp>0 and fn_orb["high"]>0:
+                    if fn_ltp>fn_orb["high"]: fn_orb["signal"]="CE"
+                    elif fn_ltp<fn_orb["low"]: fn_orb["signal"]="PE"
+                    else: fn_orb["signal"]="MONITOR"
+                elif not orb_formed:
+                    fn_orb["signal"]="WAIT"
+                print(f"ORB: O={fn_orb['open']} H={fn_orb['high']} L={fn_orb['low']} C={fn_orb['close']} Sig={fn_orb['signal']}")
+                break
     except Exception as e:
-        print(f"FINNIFTY candle error: {e}")
+        print(f"FINNIFTY ORB error: {e}")
 
-    # FINNIFTY Options premium calculation
-    fn_ce_premium=0; fn_pe_premium=0
-    try:
-        if fn_px>0:
-            vix_use=vix_px if vix_px>0 else 14.0
-            import math as _math
-            days_to_expiry=max(1,2)
-            time_factor=_math.sqrt(days_to_expiry/252)
-            fn_ce_premium=round(fn_px*(vix_use/100)*time_factor,0)
-            fn_pe_premium=round(fn_ce_premium*0.92,0)
-            print(f"Options: CE=₹{fn_ce_premium} PE=₹{fn_pe_premium}")
-    except: pass
+    # Options premium estimate
+    if fn_ltp>0:
+        import math as _m
+        days=max(1,3)
+        fn_orb["ce_prem"]=round(fn_ltp*0.006*_m.sqrt(days/5),0)
+        fn_orb["pe_prem"]=round(fn_orb["ce_prem"]*0.92,0)
 
-    finnifty_data={
-        "ltp":fn_px,"chg":fn_chg,"pts":fn_pts,"prev":fn_prev,
-        "atm":fn_atm,
-        "orb_open":fn_orb["orb_open"],"orb_high":fn_orb["orb_high"],
-        "orb_low":fn_orb["orb_low"],"orb_close":fn_orb["orb_close"],
-        "signal":fn_orb["signal"],
-        "ce_premium":fn_ce_premium,"pe_premium":fn_pe_premium,
-        "ce_sl":round(fn_ce_premium*0.7,0) if fn_ce_premium>0 else 0,
-        "ce_tgt":round(fn_ce_premium*1.5,0) if fn_ce_premium>0 else 0,
-        "pe_sl":round(fn_pe_premium*0.7,0) if fn_pe_premium>0 else 0,
-        "pe_tgt":round(fn_pe_premium*1.5,0) if fn_pe_premium>0 else 0,
-    }
-
-    # Sectors — with leader stock price + % change
+    # ── SECTORS ───────────────────────────────────────────────────────
     sectors=[]
     for sec,stks in SECTOR_STOCKS.items():
-        valid=[s for s in stks if px(s)>0]
-        chgs=[chg(s) for s in valid]
+        valid=[s for s in stks if ltp(s)>0]
+        chgs=[pct_chg(s) for s in valid]
         sec_chg=round(sum(chgs)/len(chgs),2) if chgs else 0.0
-        ldr=stks[0]
+        ldr=valid[0] if valid else stks[0]
         sectors.append({
-            "name":sec,"chg":sec_chg,"leader":ldr,
-            "leader_price":px(ldr),"leader_chg":chg(ldr),
-            "leader_pts":chg_pts(ldr),"idx_price":0,
-            "stocks":[{"sym":s,"ltp":px(s),"chg":chg(s),"pts":chg_pts(s)} for s in valid]
+            "name":sec, "chg":sec_chg, "leader":ldr,
+            "leader_price":ltp(ldr), "leader_chg":pct_chg(ldr),
+            "leader_pts":pts_chg(ldr), "idx_price":0,
+            "stocks":[{"sym":s,"ltp":ltp(s),"chg":pct_chg(s)} for s in valid]
         })
     sectors.sort(key=lambda x:x["chg"],reverse=True)
-    print(f"Top: {sectors[0]['name']} {sectors[0]['chg']}% | Bot: {sectors[-1]['name']} {sectors[-1]['chg']}%")
+    print(f"Sectors: Top={sectors[0]['name']} {sectors[0]['chg']}% | Bot={sectors[-1]['name']} {sectors[-1]['chg']}%")
 
-    # Candles — batched with rate limiting
+    # ── CANDLES ───────────────────────────────────────────────────────
     to_d=ist.strftime("%Y-%m-%d %H:%M")
     fr_d=(ist-timedelta(days=60)).strftime("%Y-%m-%d %H:%M")
     candles={}
@@ -465,118 +430,124 @@ def main():
             cd=get_candles(jwt,info["token"],"ONE_DAY",fr_d,to_d)
             if cd.get("status") and cd.get("data"):
                 candles[sym]=cd["data"]
-            time.sleep(0.25)
-            if i%20==0: print(f"  Candles: {i}/{len(STOCKS)}")
+            time.sleep(0.2)
+            if (i+1)%20==0: print(f"  Candles: {i+1}/{len(STOCKS)}")
         except: pass
-    print(f"Candles done: {len(candles)}")
+    print(f"Candles done: {len(candles)}/{len(STOCKS)}")
 
-    # ROCKERS — scan ALL stocks
+    # ── ROCKERS SCAN ──────────────────────────────────────────────────
     top4=[s["name"] for s in sectors[:4]]
     bot4=[s["name"] for s in sectors[-4:]]
-    risk=CAPITAL*RISK_PCT/100
-    bias="BULLISH" if nifty_chg>0.3 and (vix_px==0 or vix_px<15) else \
-         "BEARISH" if nifty_chg<-0.3 or (vix_px>0 and vix_px>16) else "NEUTRAL"
+    risk_amt=CAPITAL*RISK_PCT/100
     longs,shorts=[],[]
 
-    def calc_vwap(candle_data):
-        """Calculate VWAP from daily candles"""
-        if not candle_data: return 0
-        cum_tpv=0; cum_vol=0
-        for c in candle_data[-20:]:  # Last 20 days
-            tp=(float(c[2])+float(c[3])+float(c[4]))/3
-            vol=float(c[5])
-            cum_tpv+=tp*vol; cum_vol+=vol
-        return round(cum_tpv/cum_vol,2) if cum_vol>0 else 0
-
     for sym,info in STOCKS.items():
-        p=px(sym)
+        p=ltp(sym)
         if p<=0: continue
         c=candles.get(sym,[])
-        closes=[x[4] for x in c] if c else [p]
-        vols=[x[5] for x in c] if c else [1]
-        h=hi(sym); l=lo(sym); op=open_px(sym)
+        closes=[float(x[4]) for x in c] if c else [p]
+        vols=[float(x[5]) for x in c] if c else [1]
+        h=day_high(sym); l=day_low(sym); op=day_open(sym)
         vwap=calc_vwap(c)
+        e20=ema(closes,20); r=rsi(closes); vr=vol_ratio(vols)
+        macd_b=macd_bull(closes); st_b=supertrend_bull(c)
 
         if info["sec"] in top4:
-            e20=ema(closes,20); r=rsi_calc(closes); vr=vol_ratio(vols)
-            # VWAP replaces PDH — price above VWAP = institutional buying
-            vwap_long = p>vwap if vwap>0 else p>e20
+            vwap_ok=p>vwap if vwap>0 else p>e20
             conds={
-                "EMA20":p>e20,
-                "SUPERT":supert(c),
-                "RSI":50<=r<=70,
-                "MACD":macd_bull(closes),
-                "VOL":vr>=1.5,
-                "VWAP":vwap_long
+                "EMA20": p>e20,
+                "SUPERT": st_b,
+                "RSI": 50<=r<=70,
+                "MACD": macd_b,
+                "VOL": vr>=1.5,
+                "VWAP": vwap_ok,
             }
             sc=sum(conds.values())
             en=round(h*1.002,2); sl=round(en*(1-info["slp"]/100),2); rp=en-sl
             if rp<=0: continue
             longs.append({
-                "sym":sym,"sec":info["sec"],"ltp":p,"chg":chg(sym),
+                "sym":sym,"sec":info["sec"],"ltp":p,"chg":pct_chg(sym),
                 "open":op,"high":h,"low":l,"vwap":vwap,
                 "score":sc,"rsi":r,"vol_ratio":vr,
                 "conds":{k:bool(v) for k,v in conds.items()},
-                "entry":en,"sl":sl,"t1":round(en+rp*1.5,2),"t2":round(en+rp*2.5,2),
+                "entry":en,"sl":sl,
+                "t1":round(en+rp*1.5,2),"t2":round(en+rp*2.5,2),
                 "gtt_trigger":en,"gtt_limit":round(en*1.001,2),
-                "qty":max(1,math.floor(risk/rp)),"side":"LONG","bias":bias
+                "qty":max(1,math.floor(risk_amt/rp)),
+                "side":"LONG","bias":bias
             })
 
         if info["sec"] in bot4:
-            e20=ema(closes,20); r=rsi_calc(closes); vr=vol_ratio(vols)
-            # VWAP replaces PDL — price below VWAP = institutional selling
-            vwap_short = p<vwap if vwap>0 else p<e20
+            vwap_ok=p<vwap if vwap>0 else p<e20
             conds={
-                "EMA20":p<e20,
-                "SUPERT":not supert(c),
-                "RSI":30<=r<=50,
-                "MACD":not macd_bull(closes),
-                "VOL":vr>=1.5,
-                "VWAP":vwap_short
+                "EMA20": p<e20,
+                "SUPERT": not st_b,
+                "RSI": 30<=r<=50,
+                "MACD": not macd_b,
+                "VOL": vr>=1.5,
+                "VWAP": vwap_ok,
             }
             sc=sum(conds.values())
             en=round(l*0.998,2); sl=round(en*(1+info["slp"]/100),2); rp=sl-en
             if rp<=0: continue
             shorts.append({
-                "sym":sym,"sec":info["sec"],"ltp":p,"chg":chg(sym),
+                "sym":sym,"sec":info["sec"],"ltp":p,"chg":pct_chg(sym),
                 "open":op,"high":h,"low":l,"vwap":vwap,
                 "score":sc,"rsi":r,"vol_ratio":vr,
                 "conds":{k:bool(v) for k,v in conds.items()},
-                "entry":en,"sl":sl,"t1":round(en-rp*1.5,2),"t2":round(en-rp*2.5,2),
+                "entry":en,"sl":sl,
+                "t1":round(en-rp*1.5,2),"t2":round(en-rp*2.5,2),
                 "gtt_trigger":en,"gtt_limit":round(en*0.999,2),
-                "qty":max(1,math.floor(risk/rp)),"side":"SHORT","bias":bias
+                "qty":max(1,math.floor(risk_amt/rp)),
+                "side":"SHORT","bias":bias
             })
 
     longs.sort(key=lambda x:x["score"],reverse=True)
     shorts.sort(key=lambda x:x["score"],reverse=True)
-    print(f"Longs: {len(longs)} | Shorts: {len(shorts)}")
+    print(f"Longs: {len(longs)} | Shorts: {len(shorts)} | Bias: {bias}")
 
-    # Update Excel journal
+    # ── EXCEL JOURNAL ─────────────────────────────────────────────────
     all_signals=[{**s,"bias":bias} for s in longs[:5]+shorts[:5]]
     if all_signals:
-        try:
-            update_excel(all_signals,ist)
-        except Exception as e:
-            print(f"Excel error: {e}")
+        try: update_excel(all_signals,ist)
+        except Exception as e: print(f"Excel error: {e}")
 
-    # Save data.json
+    # ── SAVE DATA.JSON ────────────────────────────────────────────────
     data={
-        "generated_at":ist.strftime("%d %b %Y %I:%M %p IST"),
-        "market_status":"OPEN" if mkt_open else "CLOSED",
-        "is_live":True,
-        "market":{
-            "nifty50":{"ltp":nifty_px,"chg":nifty_chg,"pts":nifty_pts,"prev":nifty_prev},
-            "vix":{"ltp":vix_px,"chg":vix_chg,"prev":vix_prev},
-            "bias":bias
+        "generated_at": ist.strftime("%d %b %Y %I:%M %p IST"),
+        "market_status": "OPEN" if mkt_open else "CLOSED",
+        "is_live": True,
+        "market": {
+            "nifty50": {
+                "ltp":nifty_ltp,"chg":nifty_chg,
+                "pts":nifty_pts,"prev":nifty_prev
+            },
+            "vix": {"ltp":0,"chg":0,"prev":0},  # VIX not available from Angel One
+            "bias": bias
         },
-        "finnifty":finnifty_data,
-        "sectors":sectors,
-        "long":longs[:5],"short":shorts[:5],
-        "capital":CAPITAL,"risk_pct":RISK_PCT,"risk_amt":risk,
-        "universe":f"Nifty 100 — {len(STOCKS)} stocks",
+        "finnifty": {
+            "ltp":fn_ltp,"chg":fn_chg,"pts":fn_pts,"prev":fn_prev,
+            "atm":fn_atm,
+            "orb_open":fn_orb["open"],"orb_high":fn_orb["high"],
+            "orb_low":fn_orb["low"],"orb_close":fn_orb["close"],
+            "signal":fn_orb["signal"],
+            "ce_premium":fn_orb["ce_prem"],"pe_premium":fn_orb["pe_prem"],
+            "ce_sl":round(fn_orb["ce_prem"]*0.7,0),
+            "ce_tgt":round(fn_orb["ce_prem"]*1.5,0),
+            "pe_sl":round(fn_orb["pe_prem"]*0.7,0),
+            "pe_tgt":round(fn_orb["pe_prem"]*1.5,0),
+        },
+        "sectors": sectors,
+        "long":  longs[:5],
+        "short": shorts[:5],
+        "capital":CAPITAL,"risk_pct":RISK_PCT,"risk_amt":risk_amt,
+        "universe": f"Nifty 100 — {len(STOCKS)} stocks",
     }
-    with open("data.json","w") as f: json.dump(data,f,indent=2)
-    print(f"✅ All done! Bias:{bias}")
+
+    with open("data.json","w") as f:
+        json.dump(data,f,indent=2)
+    print(f"✅ data.json saved!")
+    print(f"═══ DONE ═══")
 
 if __name__=="__main__":
     main()
