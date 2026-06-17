@@ -215,26 +215,32 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--txt
 
         <div class="orb-box">
           <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:10px">⏱ FIRST 30-MIN CANDLE — 9:15 TO 9:45 AM</div>
-          <div class="orb-grid">
-            <div class="oi"><span class="ol">Open</span><span class="ov" id="orb-o" style="color:var(--txt)">—</span></div>
-            <div class="oi"><span class="ol">High ▲</span><span class="ov" id="orb-h" style="color:var(--grn)">—</span></div>
-            <div class="oi"><span class="ol">Low ▼</span><span class="ov" id="orb-l" style="color:var(--red)">—</span></div>
-            <div class="oi"><span class="ol">Close</span><span class="ov" id="orb-c" style="color:var(--txt)">—</span></div>
+
+          <!-- O/H/L/C 4 boxes -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px;margin-bottom:8px">
+            <div class="oi"><span class="ol">OPEN</span><span class="ov" id="orb-o" style="color:var(--txt);font-size:13px">—</span></div>
+            <div class="oi"><span class="ol">HIGH ▲</span><span class="ov" id="orb-h" style="color:var(--grn);font-size:13px">—</span></div>
+            <div class="oi"><span class="ol">LOW ▼</span><span class="ov" id="orb-l" style="color:var(--red);font-size:13px">—</span></div>
+            <div class="oi"><span class="ol">CLOSE</span><span class="ov" id="orb-c" style="color:var(--txt);font-size:13px">—</span></div>
           </div>
-          <div style="font-size:9px;color:var(--mut);text-align:center;padding:4px 0;margin-bottom:6px" id="orb-msg">⏰ Candle forms 9:15–9:45 AM on trading days</div>
-          </div>
-          <div class="tg2">
+
+          <!-- Status message -->
+          <div style="font-size:9px;color:var(--mut);text-align:center;padding:3px 0;margin-bottom:8px" id="orb-msg">⏰ Live candle available from 9:45 AM IST on trading days</div>
+
+          <!-- CE/PE trigger levels -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div class="tc" style="background:rgba(0,212,160,0.08);border:1px solid rgba(0,212,160,0.25)">
-              <div style="font-size:8px;color:var(--grn);letter-spacing:1px;margin-bottom:4px">📈 BUY CE IF BREAKS</div>
-              <div style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:var(--grn)" id="orb-ce">—</div>
+              <div style="font-size:8px;color:var(--grn);letter-spacing:1px;margin-bottom:5px">📈 BUY CE IF BREAKS</div>
+              <div style="font-family:JetBrains Mono,monospace;font-size:14px;font-weight:700;color:var(--grn)" id="orb-ce">—</div>
             </div>
             <div class="tc" style="background:rgba(255,69,96,0.08);border:1px solid rgba(255,69,96,0.25)">
-              <div style="font-size:8px;color:var(--red);letter-spacing:1px;margin-bottom:4px">📉 BUY PE IF BREAKS</div>
-              <div style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:var(--red)" id="orb-pe">—</div>
+              <div style="font-size:8px;color:var(--red);letter-spacing:1px;margin-bottom:5px">📉 BUY PE IF BREAKS</div>
+              <div style="font-family:JetBrains Mono,monospace;font-size:14px;font-weight:700;color:var(--red)" id="orb-pe">—</div>
             </div>
           </div>
         </div>
 
+        <!-- ATM OPTIONS PREMIUM -->
         <div style="font-size:9px;font-weight:700;color:var(--pur);letter-spacing:2px;margin-bottom:8px">ATM OPTIONS PREMIUM</div>
         <div class="opt-grid">
           <div class="opt" style="background:linear-gradient(135deg,rgba(0,61,44,0.6),rgba(0,30,22,0.8));border:1px solid rgba(0,212,160,0.4)">
