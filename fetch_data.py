@@ -672,17 +672,33 @@ def main():
                 conds={"EMA20":p>e20,"SUPERT":st_b,"RSI":50<=r<=70,
                        "MACD":macd_b,"VOL":vr>=1.5,"VWAP":vwap_ok}
                 sc=sum(conds.values())
-                en=round(h*1.002,2); sl=round(en*(1-info["slp"]/100),2); rp=en-sl
+                # ORB-based entry/SL/target
+                orb_mid  = round((h+l)/2, 2)
+                orb_range= round(h-l, 2)
+                en       = round(h+0.05, 2)          # Just above ORB high
+                sl       = round(orb_mid-0.05, 2)    # ORB midpoint SL
+                rp       = round(en-sl, 2)
                 if rp<=0: continue
+                t1       = round(en + orb_range*0.5, 2)  # 0.5x range target
+                t2       = round(en + orb_range*1.0, 2)  # 1.0x range target
+                # Intraday qty: 5x leverage (20% margin)
+                intraday_capital = CAPITAL * 5
+                qty = max(1, math.floor(intraday_capital / en))
+                max_risk_qty = max(1, math.floor(risk_amt / rp))
+                qty = min(qty, max_risk_qty * 5)  # Cap at 5x risk qty
                 longs.append({
                     "sym":sym,"sec":info["sec"],"ltp":p,"chg":pct_chg(sym),
                     "open":op,"high":h,"low":l,"vwap":vwap_val,
+                    "orb_high":h,"orb_low":l,"orb_mid":orb_mid,"orb_range":orb_range,
                     "score":sc,"rsi":r,"vol_ratio":vr,
                     "conds":{k:bool(v) for k,v in conds.items()},
-                    "entry":en,"sl":sl,"t1":round(en+rp*1.5,2),"t2":round(en+rp*2.5,2),
-                    "gtt_trigger":en,"gtt_limit":round(en*1.001,2),
-                    "qty":max(1,math.floor(risk_amt/rp)),"side":"LONG",
-                    "bias":bias,"phase":phase
+                    "entry":en,"sl":sl,"t1":t1,"t2":t2,
+                    "gtt_trigger":en,"gtt_limit":round(en+0.05,2),
+                    "sl_trigger":sl,"sl_limit":round(sl-0.05,2),
+                    "qty":qty,"risk_per_share":rp,
+                    "max_risk":round(rp*max_risk_qty,0),
+                    "potential_profit":round((t1-en)*qty,0),
+                    "side":"LONG","bias":bias,"phase":phase
                 })
 
             if info["sec"] in bot4:
@@ -690,25 +706,43 @@ def main():
                 conds={"EMA20":p<e20,"SUPERT":not st_b,"RSI":30<=r<=50,
                        "MACD":not macd_b,"VOL":vr>=1.5,"VWAP":vwap_ok}
                 sc=sum(conds.values())
-                en=round(l*0.998,2); sl=round(en*(1+info["slp"]/100),2); rp=sl-en
+                # ORB-based entry/SL/target
+                orb_mid  = round((h+l)/2, 2)
+                orb_range= round(h-l, 2)
+                en       = round(l-0.05, 2)          # Just below ORB low
+                sl       = round(orb_mid+0.05, 2)    # ORB midpoint SL
+                rp       = round(sl-en, 2)
                 if rp<=0: continue
+                t1       = round(en - orb_range*0.5, 2)  # 0.5x range target
+                t2       = round(en - orb_range*1.0, 2)  # 1.0x range target
+                # Intraday qty: 5x leverage (20% margin)
+                intraday_capital = CAPITAL * 5
+                qty = max(1, math.floor(intraday_capital / en))
+                max_risk_qty = max(1, math.floor(risk_amt / rp))
+                qty = min(qty, max_risk_qty * 5)
                 shorts.append({
                     "sym":sym,"sec":info["sec"],"ltp":p,"chg":pct_chg(sym),
                     "open":op,"high":h,"low":l,"vwap":vwap_val,
+                    "orb_high":h,"orb_low":l,"orb_mid":orb_mid,"orb_range":orb_range,
                     "score":sc,"rsi":r,"vol_ratio":vr,
                     "conds":{k:bool(v) for k,v in conds.items()},
-                    "entry":en,"sl":sl,"t1":round(en-rp*1.5,2),"t2":round(en-rp*2.5,2),
-                    "gtt_trigger":en,"gtt_limit":round(en*0.999,2),
-                    "qty":max(1,math.floor(risk_amt/rp)),"side":"SHORT",
-                    "bias":bias,"phase":phase
+                    "entry":en,"sl":sl,"t1":t1,"t2":t2,
+                    "gtt_trigger":en,"gtt_limit":round(en-0.05,2),
+                    "sl_trigger":sl,"sl_limit":round(sl+0.05,2),
+                    "qty":qty,"risk_per_share":rp,
+                    "max_risk":round(rp*max_risk_qty,0),
+                    "potential_profit":round((en-t1)*qty,0),
+                    "side":"SHORT","bias":bias,"phase":phase
                 })
 
         longs.sort(key=lambda x:x["score"],reverse=True)
         shorts.sort(key=lambda x:x["score"],reverse=True)
         print(f"Longs: {len(longs)} | Shorts: {len(shorts)}")
+        print(f"Top 2 Long: {[s['sym'] for s in longs[:2]]}")
+        print(f"Top 2 Short: {[s['sym'] for s in shorts[:2]]}")
 
-        # Excel journal
-        all_signals=[{**s} for s in longs[:5]+shorts[:5]]
+        # Excel journal — top 2 only for actual trades
+        all_signals=[{**s} for s in longs[:2]+shorts[:2]]
         if all_signals:
             try: update_excel(all_signals,ist)
             except Exception as e: print(f"Excel error: {e}")
@@ -744,8 +778,10 @@ def main():
             "pe_tgt":round(fn_orb["pe_prem"]*1.5,0),
         },
         "sectors":  sectors,
-        "long":     longs[:5],
-        "short":    shorts[:5],
+        "long":     longs[:5],    # ROCKERS screener — top 5
+        "short":    shorts[:5],   # ROCKERS screener — top 5
+        "trade_long":  longs[:2], # Trade candidates — top 2 only
+        "trade_short": shorts[:2],# Trade candidates — top 2 only
         "capital":  CAPITAL,
         "risk_pct": RISK_PCT,
         "risk_amt": CAPITAL*RISK_PCT/100,
