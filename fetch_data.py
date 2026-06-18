@@ -564,36 +564,68 @@ def main():
     fn_orb={"open":0,"high":0,"low":0,"close":0,"signal":"WAIT",
             "ce_prem":0,"pe_prem":0}
 
-    # Only fetch ORB after 9:45 AM
-    if phase in ["ORB_945_PLUS","CLOSED"]:
+    # Fetch ORB after 9:45 AM OR when market closed (EOD data still available)
+    if phase in ["ORB_945_PLUS","CLOSED","MARKET_OPEN_915","ORB_930"]:
         try:
             fn_date=ist.strftime("%Y-%m-%d")
-            for interval,label in [("THIRTY_MINUTE","30min"),("FIFTEEN_MINUTE","15min")]:
-                cd=get_candles(jwt,"26037",interval,
-                              f"{fn_date} 09:00",f"{fn_date} 10:30")
-                candle_list=cd.get("data",[]) if cd.get("status") else []
-                print(f"FINNIFTY {label}: {len(candle_list)} candles")
-                if candle_list:
-                    if interval=="THIRTY_MINUTE":
-                        c=candle_list[0]
-                        fn_orb["open"]=round(float(c[1]),2)
-                        fn_orb["high"]=round(float(c[2]),2)
-                        fn_orb["low"]=round(float(c[3]),2)
-                        fn_orb["close"]=round(float(c[4]),2)
-                    else:
-                        c2=candle_list[:2]
-                        fn_orb["open"]=round(float(c2[0][1]),2)
-                        fn_orb["high"]=round(max(float(x[2]) for x in c2),2)
-                        fn_orb["low"]=round(min(float(x[3]) for x in c2),2)
-                        fn_orb["close"]=round(float(c2[-1][4]),2)
-                    if fn_ltp>0 and fn_orb["high"]>0:
-                        if fn_ltp>fn_orb["high"]: fn_orb["signal"]="CE"
-                        elif fn_ltp<fn_orb["low"]: fn_orb["signal"]="PE"
-                        else: fn_orb["signal"]="MONITOR"
-                    print(f"ORB: H={fn_orb['high']} L={fn_orb['low']} Sig={fn_orb['signal']}")
-                    break
+            # Try broader time window to ensure we get the candle
+            fr_time=f"{fn_date} 09:00"
+            to_time=f"{fn_date} 15:30"
+
+            for interval,label in [("THIRTY_MINUTE","30min"),("FIFTEEN_MINUTE","15min"),("ONE_MINUTE","1min")]:
+                try:
+                    cd=get_candles(jwt,"26037",interval,fr_time,to_time)
+                    candle_list=cd.get("data",[]) if cd.get("status") else []
+                    print(f"FINNIFTY {label}: {len(candle_list)} candles")
+
+                    if candle_list:
+                        if interval=="THIRTY_MINUTE":
+                            # First 30-min candle = 9:15-9:45 ORB
+                            c=candle_list[0]
+                            fn_orb["open"] =round(float(c[1]),2)
+                            fn_orb["high"] =round(float(c[2]),2)
+                            fn_orb["low"]  =round(float(c[3]),2)
+                            fn_orb["close"]=round(float(c[4]),2)
+
+                        elif interval=="FIFTEEN_MINUTE":
+                            # Combine first 2 × 15-min candles = 30-min ORB
+                            c2=candle_list[:2]
+                            if len(c2)>=1:
+                                fn_orb["open"] =round(float(c2[0][1]),2)
+                                fn_orb["high"] =round(max(float(x[2]) for x in c2),2)
+                                fn_orb["low"]  =round(min(float(x[3]) for x in c2),2)
+                                fn_orb["close"]=round(float(c2[-1][4]),2)
+
+                        elif interval=="ONE_MINUTE":
+                            # Build 30-min ORB from first 30 × 1-min candles
+                            c30=candle_list[:30]
+                            if c30:
+                                fn_orb["open"] =round(float(c30[0][1]),2)
+                                fn_orb["high"] =round(max(float(x[2]) for x in c30),2)
+                                fn_orb["low"]  =round(min(float(x[3]) for x in c30),2)
+                                fn_orb["close"]=round(float(c30[-1][4]),2)
+
+                        # Set signal if we got valid data
+                        if fn_orb["high"]>0 and fn_orb["low"]>0:
+                            if fn_ltp>0:
+                                if fn_ltp>fn_orb["high"]:   fn_orb["signal"]="CE"
+                                elif fn_ltp<fn_orb["low"]:  fn_orb["signal"]="PE"
+                                else:                        fn_orb["signal"]="MONITOR"
+                            else:
+                                fn_orb["signal"]="MONITOR"
+                            print(f"ORB OK: O={fn_orb['open']} H={fn_orb['high']} L={fn_orb['low']} C={fn_orb['close']} Sig={fn_orb['signal']}")
+                            break  # Got data, stop trying
+                        else:
+                            print(f"FINNIFTY {label}: candles exist but OHLC = 0, trying next interval")
+                except Exception as e:
+                    print(f"FINNIFTY {label} error: {e}")
+                    continue
+
+            if fn_orb["high"]==0:
+                print("FINNIFTY ORB: All intervals returned empty — market may be closed or pre-market")
+
         except Exception as e:
-            print(f"FINNIFTY ORB error: {e}")
+            print(f"FINNIFTY ORB fetch error: {e}")
 
     if fn_ltp>0:
         import math as _m
