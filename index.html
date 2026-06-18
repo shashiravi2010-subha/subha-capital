@@ -1,736 +1,829 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>SUBHA CAPITAL</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
-:root{
-  --bg:#080C14;--sur:#0D1221;--card:#111827;--card2:#141D2E;--accent:#1A2640;
-  --bdr:#1E2D45;--bdr2:#253555;--gold:#F0A500;--gdim:#2D1E00;
-  --grn:#00D4A0;--grdim:#003D2C;--red:#FF4560;--rdim:#3D0015;
-  --blu:#4D9FFF;--bdim:#0A1F3D;--pur:#A855F7;
-  --txt:#E8ECF5;--txt2:#B8C4D4;--mut:#4A5870;--lbl:#7A8EA8;
-}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;}
+#!/usr/bin/env python3
+"""
+SUBHA CAPITAL — Market Data Fetcher v7
+4-Phase Pre-Market Intelligence System:
+  8:45 AM → Gift Nifty + Pre-market sentiment
+  9:00 AM → Pre-open + Sector scan  
+  9:30 AM → ORB + Stock selection (ROCKERS)
+  9:45 AM → FINNIFTY ORB + Options signal
+"""
 
-/* HEADER */
-.hdr{background:linear-gradient(180deg,#0D1525,#080C14);border-bottom:1px solid var(--bdr);padding:13px 20px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;}
-.logo{width:36px;height:36px;background:linear-gradient(135deg,var(--gold),#c07000);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;font-size:13px;flex-shrink:0;}
-.brand{font-size:12px;font-weight:700;color:var(--gold);letter-spacing:2px;}
-.sub{font-size:8px;color:var(--mut);letter-spacing:2px;margin-top:2px;}
-#clk{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;text-align:right;}
-#dt{font-size:8px;color:var(--mut);text-align:right;margin-top:2px;}
+import os,json,math,pyotp,requests,pytz,time,openpyxl
+from openpyxl.styles import PatternFill,Font,Alignment
+from openpyxl.utils import get_column_letter
+from datetime import datetime,timedelta
 
-/* LAYOUT */
-.wrap{max-width:1400px;margin:0 auto;padding:14px 14px 40px;}
-@media(min-width:1024px){.wrap{padding:20px 24px 48px;}}
-.btn-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
-.btn{flex:1;min-width:180px;padding:14px;background:linear-gradient(135deg,var(--gold),#c07000);border:none;border-radius:13px;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:#000;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
-.btn:active{transform:scale(0.97);}
-.btn:disabled{opacity:0.6;}
-.btn-dl{flex:1;min-width:160px;padding:13px;background:linear-gradient(135deg,#0d2010,#1a3a1a);border:1px solid rgba(0,212,160,0.3);border-radius:13px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;color:var(--grn);display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;}
-.stbar{display:none;align-items:center;gap:8px;padding:10px 13px;background:var(--sur);border-radius:10px;border:1px solid var(--bdr);font-size:11px;color:var(--mut);margin-bottom:12px;}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pu 1s infinite;flex-shrink:0;}
-@keyframes pu{0%,100%{opacity:1;}50%{opacity:0.2;}}
+CLIENT_ID   = os.environ["ANGEL_CLIENT_ID"]
+API_KEY     = os.environ["ANGEL_API_KEY"]
+TOTP_SECRET = os.environ["ANGEL_TOTP_SECRET"]
+PIN         = os.environ["ANGEL_PIN"]
+CAPITAL     = 100000
+RISK_PCT    = 1.0
+IST         = pytz.timezone("Asia/Kolkata")
+BASE        = "https://apiconnect.angelone.in"
 
-/* GRID — Mobile: 1col, Laptop: 2col */
-.grid{display:flex;flex-direction:column;gap:12px;}
-@media(min-width:1024px){
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:stretch;}
-  .full{grid-column:1/-1;}
-}
-
-/* CARDS */
-.crd{background:linear-gradient(145deg,var(--card),var(--card2));border:1px solid var(--bdr);border-radius:16px;padding:15px;box-shadow:0 4px 20px rgba(0,0,0,0.2);}
-.slab{font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--lbl);margin-bottom:6px;}
-.ctit{font-size:9px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--lbl);margin-bottom:10px;}
-.row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
-.bdg{padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1px;}
-.bull{background:var(--grdim);color:var(--grn);border:1px solid rgba(0,212,160,0.3);}
-.bear{background:var(--rdim);color:var(--red);border:1px solid rgba(255,69,96,0.3);}
-.neut{background:var(--bdim);color:var(--blu);border:1px solid rgba(77,159,255,0.3);}
-.live{display:inline-flex;align-items:center;gap:4px;background:rgba(0,212,160,0.1);border:1px solid rgba(0,212,160,0.3);border-radius:20px;padding:3px 8px;font-size:9px;font-weight:700;color:var(--grn);}
-.ldot{width:5px;height:5px;border-radius:50%;background:var(--grn);animation:pu 1s infinite;}
-
-/* MARKET GRID */
-.mgrid{display:flex;flex-direction:column;gap:8px;}
-.mgrid-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-@media(min-width:768px){.mgrid-row{grid-template-columns:repeat(4,1fr);}}
-.mi{background:var(--accent);border:1px solid var(--bdr2);border-radius:11px;padding:10px 12px;}
-.ml{font-size:8px;color:var(--lbl);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
-.mv{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;}
-.mc{font-family:'JetBrains Mono',monospace;font-size:10px;margin-top:2px;}
-.aibox{background:rgba(77,159,255,0.06);border:1px solid rgba(77,159,255,0.2);border-radius:10px;padding:10px;margin-top:10px;}
-.aitit{font-size:8px;color:var(--blu);letter-spacing:2px;font-weight:600;margin-bottom:4px;}
-.dec{border-radius:13px;padding:13px 15px;display:flex;align-items:center;gap:12px;margin-top:10px;}
-.go{background:linear-gradient(135deg,rgba(0,61,44,0.8),rgba(0,40,30,0.8));border:1px solid rgba(0,212,160,0.4);}
-.sk{background:linear-gradient(135deg,rgba(61,0,21,0.8),rgba(40,0,15,0.8));border:1px solid rgba(255,69,96,0.4);}
-.wt{background:linear-gradient(135deg,rgba(10,31,61,0.8),rgba(6,20,40,0.8));border:1px solid rgba(77,159,255,0.4);}
-
-/* PHASE BANNER */
-.phase-banner{background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.2);border-radius:8px;padding:6px 12px;font-size:9px;font-weight:700;color:var(--gold);letter-spacing:2px;text-align:center;margin-top:8px;}
-.pre-mkt-box{background:rgba(240,165,0,0.06);border:1px solid rgba(240,165,0,0.2);border-radius:9px;padding:9px 11px;margin-top:8px;}
-
-/* SECTORS */
-.sr{display:flex;align-items:center;padding:9px 0;border-bottom:1px solid var(--bdr);}
-.sr:last-child{border-bottom:none;}
-.srk{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--mut);width:18px;flex-shrink:0;}
-.sn{flex:1;font-size:12px;font-weight:600;padding:0 8px;}
-.sl2{font-size:9px;color:var(--mut);margin-top:2px;font-family:'JetBrains Mono',monospace;}
-.sbw{width:50px;height:3px;background:var(--bdr);border-radius:2px;overflow:hidden;flex-shrink:0;}
-.sb{height:100%;border-radius:2px;}
-.sv{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;min-width:62px;text-align:right;}
-.shdr{font-size:8px;font-weight:700;letter-spacing:2px;padding:6px 8px;border-radius:6px;margin-bottom:6px;}
-
-/* FINNIFTY */
-.fn-hdr{background:linear-gradient(135deg,rgba(168,85,247,0.15),rgba(45,27,78,0.8));border:1px solid rgba(168,85,247,0.3);border-radius:12px;padding:13px;margin-bottom:11px;}
-.orb-box{background:var(--accent);border:1px solid var(--bdr2);border-radius:11px;padding:13px;margin-bottom:10px;}
-.orb-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px;}
-@media(min-width:600px){.orb-grid{grid-template-columns:repeat(4,1fr);}}
-.oi{background:var(--card);border-radius:9px;padding:9px;text-align:center;}
-.ol{font-size:8px;color:var(--lbl);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:4px;}
-.ov{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;}
-.tg2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
-.tc{border-radius:9px;padding:10px;text-align:center;}
-.opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
-.opt{border-radius:11px;padding:13px;text-align:center;}
-.sig{border-radius:11px;padding:13px;text-align:center;margin-bottom:10px;}
-
-/* ROCKERS */
-.rck{background:var(--accent);border:1px solid var(--bdr2);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;}
-.rck:hover{border-color:var(--gold);}
-.rck:last-child{margin-bottom:0;}
-.rconds{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
-.cond{font-size:8px;padding:3px 7px;border-radius:6px;font-weight:600;}
-.cp{background:rgba(0,212,160,0.1);color:var(--grn);border:1px solid rgba(0,212,160,0.2);}
-.cf{background:rgba(255,69,96,0.1);color:var(--red);border:1px solid rgba(255,69,96,0.2);}
-
-/* CANDIDATES SIDE BY SIDE */
-.cand-wrap{display:grid;grid-template-columns:1fr;gap:12px;}
-@media(min-width:1024px){.cand-wrap{grid-template-columns:1fr 1fr;}}
-
-/* TRADE CARDS */
-.stk{background:var(--accent);border:1px solid var(--bdr2);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;}
-.stk:last-child{margin-bottom:0;}
-.lvls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:8px;}
-.lb{background:var(--card);border:1px solid var(--bdr);border-radius:7px;padding:7px;text-align:center;}
-.ll{font-size:7px;color:var(--lbl);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:3px;}
-.lv{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;}
-.lb.e{border-color:rgba(240,165,0,0.3);}.lb.e .lv{color:var(--gold);}
-.lb.s{border-color:rgba(255,69,96,0.3);}.lb.s .lv{color:var(--red);}
-.lb.t{border-color:rgba(0,212,160,0.3);}.lb.t .lv{color:var(--grn);}
-.gtt{background:rgba(240,165,0,0.04);border:1px solid rgba(240,165,0,0.15);border-radius:10px;padding:10px;margin-bottom:8px;}
-.gtit{font-size:8px;color:var(--gold);letter-spacing:2px;font-weight:700;margin-bottom:7px;}
-.ggrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;}
-.gi{background:var(--card);border-radius:7px;padding:7px 9px;}
-.gl{font-size:7px;color:var(--lbl);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:3px;}
-.gv{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;}
-.hint{font-size:9px;color:var(--lbl);text-align:center;margin-top:6px;}
-
-/* CHECKLIST */
-.clcard{background:linear-gradient(145deg,var(--card),var(--card2));border:1px solid rgba(240,165,0,0.25);border-radius:16px;padding:15px;}
-.cltit{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:11px;}
-.ck{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr);}
-.ck:last-child{border-bottom:none;}
-.cki{font-size:13px;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--accent);}
-.ckt{font-size:11px;line-height:1.5;font-weight:500;}
-.cks{font-size:9px;color:var(--mut);margin-top:2px;line-height:1.5;}
-
-/* RISK */
-.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-@media(min-width:768px){.rgrid{grid-template-columns:repeat(4,1fr);}}
-.ri{background:var(--accent);border:1px solid var(--bdr2);border-radius:10px;padding:10px 12px;}
-.rl{font-size:8px;color:var(--lbl);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;}
-.rv{font-size:11px;font-weight:700;}
-.rv.g{color:var(--grn);}.rv.r{color:var(--red);}
-.disc{background:rgba(240,165,0,0.04);border:1px solid rgba(240,165,0,0.15);border-radius:10px;padding:10px;font-size:9px;color:var(--mut);line-height:1.6;}
-.ftr{text-align:center;padding:20px 0;font-size:9px;color:var(--mut);letter-spacing:1px;}
-.ftr span{color:var(--gold);}
-</style>
-</head>
-<body>
-
-<!-- HEADER -->
-<div class="hdr">
-  <div style="display:flex;align-items:center;gap:10px;">
-    <div class="logo">SC</div>
-    <div><div class="brand">SUBHA CAPITAL</div><div class="sub">LIVE INTELLIGENCE V9</div></div>
-  </div>
-  <div><div id="clk">--:--:--</div><div id="dt"></div></div>
-</div>
-
-<div class="wrap">
-  <!-- BUTTONS -->
-  <div class="btn-row">
-    <button class="btn" id="fbtn" onclick="load()">⚡ GET TODAY'S MARKET BRIEF</button>
-    <a class="btn-dl" href="trading_journal.xlsx" download>📊 DOWNLOAD JOURNAL (EXCEL)</a>
-  </div>
-  <div class="stbar" id="stbar"><div class="dot"></div><span id="stxt">Loading live data...</span></div>
-
-  <div class="grid">
-
-    <!-- 1. MARKET PULSE — FULL WIDTH -->
-    <div class="full" id="s1" style="display:none">
-      <div class="slab">1 · MARKET PULSE — 8:45 AM CHECK</div>
-      <div class="crd" id="s1card">
-        <div class="row" style="margin-bottom:10px">
-          <div class="ctit" style="margin:0">PRE-MARKET BIAS</div>
-          <div id="mbdg" class="bdg neut">—</div>
-        </div>
-        <div class="mgrid" id="mgrid"></div>
-        <div class="aibox"><div class="aitit">⚡ AI ANALYSIS</div><div id="aitxt" style="font-size:11px;color:var(--txt2);line-height:1.6">—</div></div>
-      </div>
-      <div class="dec wt" id="dec" style="display:none">
-        <div style="font-size:22px;flex-shrink:0" id="dec-ic">⏳</div>
-        <div><div style="font-size:14px;font-weight:700" id="dec-tit"></div><div style="font-size:11px;margin-top:3px;opacity:0.85;line-height:1.5" id="dec-sub"></div></div>
-      </div>
-    </div>
-
-    <!-- 2. SECTOR HEATMAP — LEFT -->
-    <div id="s2" style="display:none">
-      <div class="slab">2 · SECTOR HEATMAP</div>
-      <div class="crd" style="height:calc(100% - 22px)"><div id="slist"></div></div>
-    </div>
-
-    <!-- 3. FINNIFTY OPTIONS — RIGHT -->
-    <div id="s3" style="display:none">
-      <div class="slab" style="color:var(--pur)">3 · FINNIFTY OPTIONS — 30-MIN ORB</div>
-      <div class="crd" style="border-color:rgba(168,85,247,0.25);height:calc(100% - 22px)">
-
-        <div class="fn-hdr">
-          <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:var(--pur);margin-bottom:5px">🟣 FINNIFTY INDEX</div>
-          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-            <div style="font-family:JetBrains Mono,monospace;font-size:26px;font-weight:700" id="fn-ltp">—</div>
-            <div style="font-family:JetBrains Mono,monospace;font-size:12px;font-weight:600" id="fn-chg">—</div>
-          </div>
-          <div style="font-size:10px;color:var(--lbl);margin-top:5px">
-            ATM: <strong style="color:var(--pur);font-family:JetBrains Mono,monospace" id="fn-atm">—</strong>
-            &nbsp;·&nbsp; Expiry: <strong style="color:var(--gold)" id="fn-exp">Tue</strong>
-            &nbsp;·&nbsp; Prev: <strong style="color:var(--txt2);font-family:JetBrains Mono,monospace" id="fn-prev">—</strong>
-          </div>
-        </div>
-
-        <div class="orb-box">
-          <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:10px">⏱ FIRST 30-MIN CANDLE — 9:15 TO 9:45 AM</div>
-
-          <!-- O/H/L/C 4 boxes -->
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px;margin-bottom:8px">
-            <div class="oi"><span class="ol">OPEN</span><span class="ov" id="orb-o" style="color:var(--txt);font-size:13px">—</span></div>
-            <div class="oi"><span class="ol">HIGH ▲</span><span class="ov" id="orb-h" style="color:var(--grn);font-size:13px">—</span></div>
-            <div class="oi"><span class="ol">LOW ▼</span><span class="ov" id="orb-l" style="color:var(--red);font-size:13px">—</span></div>
-            <div class="oi"><span class="ol">CLOSE</span><span class="ov" id="orb-c" style="color:var(--txt);font-size:13px">—</span></div>
-          </div>
-
-          <!-- Status message -->
-          <div style="font-size:9px;color:var(--mut);text-align:center;padding:3px 0;margin-bottom:8px" id="orb-msg">⏰ Live candle available from 9:45 AM IST on trading days</div>
-
-          <!-- CE/PE trigger levels -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div class="tc" style="background:rgba(0,212,160,0.08);border:1px solid rgba(0,212,160,0.25)">
-              <div style="font-size:8px;color:var(--grn);letter-spacing:1px;margin-bottom:5px">📈 BUY CE IF BREAKS</div>
-              <div style="font-family:JetBrains Mono,monospace;font-size:14px;font-weight:700;color:var(--grn)" id="orb-ce">—</div>
-            </div>
-            <div class="tc" style="background:rgba(255,69,96,0.08);border:1px solid rgba(255,69,96,0.25)">
-              <div style="font-size:8px;color:var(--red);letter-spacing:1px;margin-bottom:5px">📉 BUY PE IF BREAKS</div>
-              <div style="font-family:JetBrains Mono,monospace;font-size:14px;font-weight:700;color:var(--red)" id="orb-pe">—</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ATM OPTIONS PREMIUM -->
-        <div style="font-size:9px;font-weight:700;color:var(--pur);letter-spacing:2px;margin-bottom:8px">ATM OPTIONS PREMIUM</div>
-        <div class="opt-grid">
-          <div class="opt" style="background:linear-gradient(135deg,rgba(0,61,44,0.6),rgba(0,30,22,0.8));border:1px solid rgba(0,212,160,0.4)">
-            <div style="font-size:10px;font-weight:700;color:var(--grn);margin-bottom:5px">📈 CALL (CE)</div>
-            <div style="font-family:JetBrains Mono,monospace;font-size:17px;font-weight:700;color:var(--grn);margin-bottom:3px" id="ce-str">—</div>
-            <div style="font-size:9px;color:var(--lbl);margin-bottom:4px">Est. Premium</div>
-            <div style="font-family:JetBrains Mono,monospace;font-size:15px;color:var(--grn);margin-bottom:6px" id="ce-prem">₹—</div>
-            <div style="font-size:9px;color:var(--red)" id="ce-sl">SL: ₹—</div>
-            <div style="font-size:9px;color:var(--grn);margin-top:3px" id="ce-tgt">TGT: ₹—</div>
-          </div>
-          <div class="opt" style="background:linear-gradient(135deg,rgba(61,0,21,0.6),rgba(30,0,12,0.8));border:1px solid rgba(255,69,96,0.4)">
-            <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:5px">📉 PUT (PE)</div>
-            <div style="font-family:JetBrains Mono,monospace;font-size:17px;font-weight:700;color:var(--red);margin-bottom:3px" id="pe-str">—</div>
-            <div style="font-size:9px;color:var(--lbl);margin-bottom:4px">Est. Premium</div>
-            <div style="font-family:JetBrains Mono,monospace;font-size:15px;color:var(--red);margin-bottom:6px" id="pe-prem">₹—</div>
-            <div style="font-size:9px;color:var(--red)" id="pe-sl">SL: ₹—</div>
-            <div style="font-size:9px;color:var(--grn);margin-top:3px" id="pe-tgt">TGT: ₹—</div>
-          </div>
-        </div>
-
-        <div class="sig" id="sig" style="background:rgba(10,31,61,0.6);border:1px solid rgba(77,159,255,0.3)">
-          <div style="font-size:16px;font-weight:700;margin-bottom:5px" id="sig-tit">⏳ WAITING FOR 9:45 AM</div>
-          <div style="font-size:11px;opacity:0.85;line-height:1.5" id="sig-sub">First 30-min candle forms 9:15–9:45 AM.</div>
-        </div>
-
-        <div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:9px;padding:10px">
-          <div style="font-size:8px;color:var(--pur);letter-spacing:2px;font-weight:700;margin-bottom:6px">📋 FINNIFTY OPTIONS RULES</div>
-          <div style="font-size:10px;color:var(--txt2);line-height:1.9">
-            ⏱ Wait for 9:45 AM — full 30-min candle only<br>
-            📈 High breaks → Buy ATM CE immediately<br>
-            📉 Low breaks → Buy ATM PE immediately<br>
-            🎯 Target → 50% premium gain<br>
-            🛑 Stop Loss → 30% premium loss<br>
-            🚫 Hard Exit → 3:00 PM no matter what<br>
-            ⚡ One side only — CE or PE, never both
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 4. ROCKERS — FULL WIDTH with Long/Short side by side -->
-    <div class="full" id="s4" style="display:none">
-      <div class="slab">4 · ROCKERS SCREENER — NIFTY 100 · TAP STOCK FOR CHART</div>
-      <div class="crd">
-        <div class="row" style="margin-bottom:10px">
-          <div class="ctit" style="margin:0">6-CONDITION VWAP SCAN</div>
-          <div id="rck-bdg" style="font-size:8px;padding:3px 9px;border-radius:8px;font-weight:700;background:rgba(240,165,0,0.1);color:var(--gold);border:1px solid rgba(240,165,0,0.2)">—</div>
-        </div>
-        <div class="cand-wrap">
-          <div>
-            <div class="shdr" style="color:var(--grn);background:var(--grdim)">📈 LONG ROCKERS — TOP SECTORS</div>
-            <div id="rck-long"></div>
-          </div>
-          <div>
-            <div class="shdr" style="color:var(--red);background:var(--rdim)">📉 SHORT ROCKERS — WEAK SECTORS</div>
-            <div id="rck-short"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 5. TRADE CANDIDATES — FULL WIDTH with Long/Short side by side -->
-    <div class="full" id="s5" style="display:none">
-      <div class="slab">5 · TRADE CANDIDATES + GTT LEVELS</div>
-      <div class="crd">
-        <div class="row" style="margin-bottom:10px">
-          <div class="ctit" style="margin:0">TODAY'S SETUPS</div>
-          <div id="tcnt" style="font-size:9px;color:var(--mut);background:var(--accent);padding:3px 9px;border-radius:8px;border:1px solid var(--bdr2)"></div>
-        </div>
-        <div class="cand-wrap">
-          <div>
-            <div class="shdr" style="color:var(--grn);background:var(--grdim)">📈 LONG CANDIDATES</div>
-            <div id="long-list"></div>
-          </div>
-          <div>
-            <div class="shdr" style="color:var(--red);background:var(--rdim)">📉 SHORT CANDIDATES</div>
-            <div id="short-list"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 6. ENTRY CHECKLIST — FULL WIDTH -->
-    <div class="full" id="s6" style="display:none">
-      <div class="slab">6 · ENTRY CHECKLIST — FOLLOW EVERY DAY</div>
-      <div class="clcard">
-        <div class="cltit">⏱ STEP BY STEP — EVERY TRADING DAY</div>
-        <div id="cklist"></div>
-      </div>
-    </div>
-
-    <!-- 7. RISK RULES — FULL WIDTH -->
-    <div class="full" id="s7" style="display:none">
-      <div class="slab">7 · RISK RULES</div>
-      <div class="crd"><div class="rgrid" id="rgrid"></div></div>
-    </div>
-
-  </div><!-- end grid -->
-
-  <div id="disc" style="display:none;margin-top:12px" class="disc">⚠️ For planning only. Not financial advice. Options involve high risk. Always use stop losses. Tap any stock for live TradingView chart.</div>
-  <div id="ftr" style="display:none" class="ftr">Built by <span>Ravi</span> · SUBHA CAPITAL V9 · Nifty 100 + FINNIFTY · Free Forever on GitHub</div>
-</div>
-
-<script>
-// CLOCK
-function tick(){
-  const d=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));
-  const p=n=>String(n).padStart(2,'0');
-  document.getElementById('clk').textContent=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-  const D=['SUN','MON','TUE','WED','THU','FRI','SAT'],M=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-  document.getElementById('dt').textContent=`${D[d.getDay()]} ${d.getDate()} ${M[d.getMonth()]} ${d.getFullYear()} · IST`;
-}
-tick(); setInterval(tick,1000);
-
-const $=id=>document.getElementById(id);
-const sh=id=>{const e=$(id);if(e)e.style.display='block';}
-const fmt=n=>Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
-const sgn=n=>n>=0?'+':'';
-const col=n=>n>0?'var(--grn)':n<0?'var(--red)':'var(--blu)';
-const atm=v=>Math.round((v||0)/50)*50;
-function openChart(sym){window.open(`https://www.tradingview.com/chart/?symbol=NSE:${sym}&interval=15`,'_blank');}
-function nextTue(){
-  const d=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));
-  const diff=d.getDay()<=2?(2-d.getDay()):(9-d.getDay());
-  const t=new Date(d); t.setDate(d.getDate()+(diff===0&&d.getHours()>=15?7:diff));
-  return t.toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+# ── NIFTY 100 UNIVERSE ────────────────────────────────────────────────
+STOCKS = {
+    "HDFCBANK":   {"token":"1333",  "sec":"BANKING","slp":0.9},
+    "ICICIBANK":  {"token":"4963",  "sec":"BANKING","slp":0.85},
+    "SBIN":       {"token":"3045",  "sec":"BANKING","slp":1.0},
+    "AXISBANK":   {"token":"5900",  "sec":"BANKING","slp":1.0},
+    "KOTAKBANK":  {"token":"1922",  "sec":"BANKING","slp":0.85},
+    "BANKBARODA": {"token":"4668",  "sec":"BANKING","slp":1.2},
+    "INDUSINDBK": {"token":"5258",  "sec":"BANKING","slp":1.1},
+    "CANBK":      {"token":"10794", "sec":"BANKING","slp":1.2},
+    "BAJFINANCE": {"token":"317",   "sec":"FINANCE","slp":0.85},
+    "BAJAJFINSV": {"token":"16675", "sec":"FINANCE","slp":0.90},
+    "HDFCLIFE":   {"token":"467",   "sec":"FINANCE","slp":0.85},
+    "SBILIFE":    {"token":"21808", "sec":"FINANCE","slp":0.85},
+    "ICICIPRULI": {"token":"18529", "sec":"FINANCE","slp":0.85},
+    "CHOLAFIN":   {"token":"685",   "sec":"FINANCE","slp":1.0},
+    "MUTHOOTFIN": {"token":"13923", "sec":"FINANCE","slp":1.0},
+    "PFC":        {"token":"14299", "sec":"FINANCE","slp":1.0},
+    "RECLTD":     {"token":"21614", "sec":"FINANCE","slp":1.0},
+    "SHRIRAMFIN": {"token":"4306",  "sec":"FINANCE","slp":1.0},
+    "INFY":       {"token":"1594",  "sec":"IT","slp":0.80},
+    "TCS":        {"token":"11536", "sec":"IT","slp":0.75},
+    "WIPRO":      {"token":"3787",  "sec":"IT","slp":0.90},
+    "HCLTECH":    {"token":"7229",  "sec":"IT","slp":0.85},
+    "TECHM":      {"token":"13538", "sec":"IT","slp":1.0},
+    "LTIM":       {"token":"17818", "sec":"IT","slp":0.90},
+    "MPHASIS":    {"token":"4503",  "sec":"IT","slp":1.0},
+    "PERSISTENT": {"token":"18365", "sec":"IT","slp":1.0},
+    "COFORGE":    {"token":"11543", "sec":"IT","slp":1.0},
+    "OFSS":       {"token":"10738", "sec":"IT","slp":0.85},
+    "MARUTI":     {"token":"10999", "sec":"AUTO","slp":0.85},
+    "MM":         {"token":"2031",  "sec":"AUTO","slp":0.80},
+    "TATAMOTORS": {"token":"3456",  "sec":"AUTO","slp":1.2},
+    "BAJAJ-AUTO": {"token":"16669", "sec":"AUTO","slp":0.90},
+    "HEROMOTOCO": {"token":"1348",  "sec":"AUTO","slp":0.90},
+    "EICHERMOT":  {"token":"910",   "sec":"AUTO","slp":0.90},
+    "TVSMOTOR":   {"token":"3518",  "sec":"AUTO","slp":1.0},
+    "ASHOKLEY":   {"token":"212",   "sec":"AUTO","slp":1.2},
+    "SUNPHARMA":  {"token":"3351",  "sec":"PHARMA","slp":0.75},
+    "DRREDDY":    {"token":"881",   "sec":"PHARMA","slp":0.80},
+    "CIPLA":      {"token":"694",   "sec":"PHARMA","slp":0.85},
+    "DIVISLAB":   {"token":"10940", "sec":"PHARMA","slp":0.85},
+    "AUROPHARMA": {"token":"275",   "sec":"PHARMA","slp":1.0},
+    "ALKEM":      {"token":"13634", "sec":"PHARMA","slp":0.90},
+    "BIOCON":     {"token":"524",   "sec":"PHARMA","slp":1.1},
+    "UPL":        {"token":"11287", "sec":"PHARMA","slp":1.1},
+    "TATASTEEL":  {"token":"3499",  "sec":"METAL","slp":1.0},
+    "JSWSTEEL":   {"token":"11723", "sec":"METAL","slp":1.0},
+    "HINDALCO":   {"token":"1363",  "sec":"METAL","slp":1.1},
+    "COALINDIA":  {"token":"20374", "sec":"METAL","slp":1.0},
+    "VEDL":       {"token":"3063",  "sec":"METAL","slp":1.2},
+    "NMDC":       {"token":"15332", "sec":"METAL","slp":1.1},
+    "HINDUNILVR": {"token":"1394",  "sec":"FMCG","slp":0.70},
+    "ITC":        {"token":"1660",  "sec":"FMCG","slp":0.75},
+    "BRITANNIA":  {"token":"547",   "sec":"FMCG","slp":0.80},
+    "NESTLEIND":  {"token":"17963", "sec":"FMCG","slp":0.70},
+    "DABUR":      {"token":"772",   "sec":"FMCG","slp":0.80},
+    "GODREJCP":   {"token":"10099", "sec":"FMCG","slp":0.85},
+    "MARICO":     {"token":"4067",  "sec":"FMCG","slp":0.85},
+    "COLPAL":     {"token":"1367",  "sec":"FMCG","slp":0.80},
+    "RELIANCE":   {"token":"2885",  "sec":"ENERGY","slp":0.80},
+    "ONGC":       {"token":"2475",  "sec":"ENERGY","slp":0.90},
+    "BPCL":       {"token":"526",   "sec":"ENERGY","slp":1.0},
+    "NTPC":       {"token":"11630", "sec":"ENERGY","slp":0.90},
+    "POWERGRID":  {"token":"14977", "sec":"ENERGY","slp":0.85},
+    "TATAPOWER":  {"token":"3426",  "sec":"ENERGY","slp":1.1},
+    "IOC":        {"token":"1624",  "sec":"ENERGY","slp":1.0},
+    "DLF":        {"token":"14732", "sec":"REALTY","slp":1.0},
+    "GODREJPROP": {"token":"9742",  "sec":"REALTY","slp":1.0},
+    "OBEROIRLTY": {"token":"20316", "sec":"REALTY","slp":1.0},
+    "LT":         {"token":"11483", "sec":"INFRA","slp":0.85},
+    "ADANIPORTS": {"token":"15083", "sec":"INFRA","slp":1.0},
+    "SIEMENS":    {"token":"3150",  "sec":"INFRA","slp":0.90},
+    "ABB":        {"token":"13",    "sec":"INFRA","slp":0.90},
+    "BEL":        {"token":"383",   "sec":"INFRA","slp":1.0},
+    "HAL":        {"token":"10455", "sec":"INFRA","slp":1.0},
+    "BHEL":       {"token":"438",   "sec":"INFRA","slp":1.2},
+    "TITAN":      {"token":"3506",  "sec":"CONSUMER","slp":0.85},
+    "ASIANPAINT": {"token":"236",   "sec":"CONSUMER","slp":0.80},
+    "PIDILITIND": {"token":"2664",  "sec":"CONSUMER","slp":0.80},
+    "HAVELLS":    {"token":"10350", "sec":"CONSUMER","slp":0.90},
+    "VOLTAS":     {"token":"3718",  "sec":"CONSUMER","slp":1.0},
+    "DMART":      {"token":"14413", "sec":"CONSUMER","slp":0.85},
+    "TRENT":      {"token":"3721",  "sec":"CONSUMER","slp":0.90},
+    "ZOMATO":     {"token":"5097",  "sec":"CONSUMER","slp":1.2},
+    "NYKAA":      {"token":"21431", "sec":"CONSUMER","slp":1.2},
+    "IRCTC":      {"token":"13611", "sec":"CONSUMER","slp":1.0},
+    "ULTRACEMCO": {"token":"11532", "sec":"CEMENT","slp":0.85},
+    "GRASIM":     {"token":"1232",  "sec":"CEMENT","slp":0.90},
+    "AMBUJACEM":  {"token":"1270",  "sec":"CEMENT","slp":1.0},
+    "SHREECEM":   {"token":"3103",  "sec":"CEMENT","slp":0.85},
+    "BHARTIARTL": {"token":"10604", "sec":"TELECOM","slp":0.85},
+    "INDUSTOWER": {"token":"17491", "sec":"TELECOM","slp":1.0},
 }
 
-async function load(){
-  const btn=$('fbtn');
-  btn.disabled=true; btn.textContent='⏳ LOADING...';
-  $('stbar').style.display='flex'; $('stxt').textContent='Reading live data...';
-  try{
-    const resp=await fetch('data.json?t='+Date.now());
-    if(!resp.ok) throw new Error('not ready');
-    const d=await resp.json();
-    $('stxt').textContent='Getting AI analysis...';
-    let ai='Follow checklist. Wait 9:30 AM for equity ORB. Wait 9:45 AM for FINNIFTY options ORB.';
-    try{
-      const fn=d.finnifty||{};
-      const gn=d.gift_nifty||{};
-      const pr=`NSE intraday trader. Gift Nifty ${gn.bias||'flat'}. Nifty ${sgn(d.market.nifty50.chg)}${d.market.nifty50.chg}% (${sgn(d.market.nifty50.pts||0)}${(d.market.nifty50.pts||0).toFixed(0)}pts). VIX ${d.market.vix&&d.market.vix.ltp>0?d.market.vix.ltp:'—'}. FINNIFTY ${fn.chg?sgn(fn.chg)+fn.chg+'%':'—'}. Top sector ${d.sectors?.[0]?.name||''}. 2 sentences max 35 words: bias and ORB advice.`;
-      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:80,messages:[{role:'user',content:pr}]})});
-      if(r.ok){const rd=await r.json();const t=rd.content?.map(i=>i.text||'').join('').trim();if(t)ai=t;}
-    }catch(e){}
-    $('stbar').style.display='none';
-    render(d,ai);
-  }catch(e){
-    $('stbar').style.display='none';
-    sh('s1');
-    $('mgrid').innerHTML=`<div style="grid-column:1/-1;background:var(--rdim);border:1px solid var(--red);border-radius:10px;padding:18px;text-align:center">
-      <div style="font-size:26px;margin-bottom:10px">⏰</div>
-      <div style="font-size:14px;font-weight:700;color:var(--red);margin-bottom:8px">Data Not Ready Yet</div>
-      <div style="font-size:11px;color:var(--txt2);line-height:1.8">
-        GitHub Actions runs at <strong style="color:var(--gold)">8:45 AM IST</strong> every weekday.<br>
-        Open after <strong style="color:var(--gold)">8:45 AM</strong> Mon–Fri.<br><br>
-        <strong>${new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata',weekday:'short',hour:'2-digit',minute:'2-digit'})}</strong>
-      </div></div>`;
-  }
-  btn.disabled=false; btn.innerHTML='🔄 REFRESH MARKET BRIEF';
+INDICES = {"NIFTY50":"26000","FINNIFTY":"26037"}
+
+SECTOR_STOCKS = {
+    "BANKING":  ["HDFCBANK","ICICIBANK","SBIN","AXISBANK","KOTAKBANK","INDUSINDBK"],
+    "FINANCE":  ["BAJFINANCE","BAJAJFINSV","CHOLAFIN","PFC","RECLTD","MUTHOOTFIN"],
+    "IT":       ["INFY","TCS","WIPRO","HCLTECH","TECHM","LTIM"],
+    "AUTO":     ["MARUTI","MM","TATAMOTORS","BAJAJ-AUTO","HEROMOTOCO"],
+    "PHARMA":   ["SUNPHARMA","DRREDDY","CIPLA","DIVISLAB","AUROPHARMA"],
+    "METAL":    ["TATASTEEL","JSWSTEEL","HINDALCO","COALINDIA","VEDL"],
+    "FMCG":     ["HINDUNILVR","ITC","BRITANNIA","NESTLEIND","DABUR"],
+    "ENERGY":   ["RELIANCE","ONGC","BPCL","NTPC","POWERGRID"],
+    "REALTY":   ["DLF","GODREJPROP","OBEROIRLTY"],
+    "INFRA":    ["LT","ADANIPORTS","BEL","HAL","BHEL"],
+    "CONSUMER": ["TITAN","ASIANPAINT","DMART","TRENT","ZOMATO"],
+    "CEMENT":   ["ULTRACEMCO","GRASIM","AMBUJACEM"],
+    "TELECOM":  ["BHARTIARTL","INDUSTOWER"],
 }
 
-function render(d,ai){
-  const m=d.market; const fn=d.finnifty||{}; const gn=d.gift_nifty||{};
-  const nL=m.nifty50.ltp||0,nC=m.nifty50.chg||0,nP=m.nifty50.pts||0,nPr=m.nifty50.prev||0;
-  const vix=m.vix||{}; const nc=col(nC);
-  const vixCol=vix.ltp>0?(vix.ltp<13?'var(--grn)':vix.ltp<16?'var(--gold)':'var(--red)'):'var(--mut)';
-  const vixStatus=vix.status||'Check NSE';
+# ── TIME PHASE DETECTION ─────────────────────────────────────────────
+def get_phase(ist):
+    h,m = ist.hour, ist.minute
+    if h<9 or (h==8 and m>=45):
+        if h==8 and m>=45: return "PREMARKET_845"
+    if h==9 and m<15: return "PREMARKET_900"
+    if h==9 and m<30: return "MARKET_OPEN_915"
+    if h==9 and m<45: return "ORB_930"
+    if h>=9 and h<15: return "ORB_945_PLUS"
+    return "CLOSED"
 
-  // ── 1. MARKET PULSE ────────────────────────────────────────────────
-  $('mgrid').innerHTML=`
-    <div class="mi" style="border-left:3px solid ${nc};background:linear-gradient(135deg,rgba(30,45,69,0.5),var(--accent))">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px">
-        <div>
-          <div class="ml" style="margin-bottom:3px">📊 NIFTY 50 — LIVE</div>
-          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
-            <div class="mv" style="font-size:26px;color:${nc}">${fmt(nL)}</div>
-            <div style="font-family:JetBrains Mono,monospace;font-size:13px;font-weight:600;color:${nc}">${sgn(nC)}${nC.toFixed(2)}% &nbsp;(${sgn(nP)}${nP.toFixed(1)} pts)</div>
-          </div>
-          <div style="font-size:9px;color:var(--mut);margin-top:3px">Prev Close: ₹${fmt(nPr)} &nbsp;·&nbsp; <span style="color:${nc};font-weight:700">${nC>0.3?'BULLISH MOMENTUM ▲':nC<-0.3?'BEARISH PRESSURE ▼':'FLAT — WAIT'}</span></div>
-        </div>
-        <span class="live"><span class="ldot"></span>${d.generated_at||'—'}</span>
-      </div>
-    </div>
-    <div class="mgrid-row">
-      <div class="mi" style="border-left:3px solid var(--gold)">
-        <div class="ml">🌐 GIFT NIFTY</div>
-        <div class="mv" style="color:${col(gn.chg||0)}">${gn.ltp>0?fmt(gn.ltp):'—'}</div>
-        <div class="mc" style="color:${col(gn.chg||0)}">${gn.chg?(sgn(gn.chg)+gn.chg.toFixed(2)+'%'):'—'}</div>
-        <div style="font-size:9px;font-weight:700;color:${col(gn.chg||0)};margin-top:3px">${gn.bias||'—'}</div>
-        <div style="font-size:8px;color:var(--mut);margin-top:2px">SGX · Pre-market gap</div>
-      </div>
-      <div class="mi" style="border-left:3px solid ${vixCol};cursor:pointer" onclick="window.open('https://www.nseindia.com/market-data/india-vix','_blank')">
-        <div class="ml">📊 INDIA VIX</div>
-        <div class="mv" style="color:${vixCol}">${vix.ltp>0?vix.ltp.toFixed(2):'—'}</div>
-        <div class="mc" style="color:${vix.chg>=0?'var(--grn)':'var(--red)'}">${vix.ltp>0?((vix.chg>=0?'+':'')+vix.chg.toFixed(2)+' pts'):'Tap → NSE'}</div>
-        <div style="font-size:9px;font-weight:700;color:${vixCol};margin-top:3px">${vixStatus}</div>
-        <div style="font-size:8px;color:var(--mut);margin-top:2px">&lt;13 Safe · 13-16 Caution · &gt;16 Skip</div>
-      </div>
-      <div class="mi" style="border-left:3px solid var(--pur)">
-        <div class="ml">🟣 FINNIFTY</div>
-        <div class="mv" style="color:var(--pur)">${fn.ltp>0?fmt(fn.ltp):'—'}</div>
-        <div class="mc" style="color:${col(fn.chg||0)}">${fn.chg?sgn(fn.chg)+fn.chg.toFixed(2)+'% ('+sgn(fn.pts||0)+(fn.pts||0).toFixed(1)+' pts)':'—'}</div>
-        <div style="font-size:9px;color:var(--mut);margin-top:2px">Prev: ${fn.prev>0?fmt(fn.prev):'—'}</div>
-        <div style="font-size:9px;color:var(--pur);margin-top:2px">ATM: ${fn.atm>0?fn.atm.toLocaleString('en-IN'):'—'} · ORB 9:45 AM</div>
-      </div>
-      <div class="mi" style="border-left:3px solid var(--blu)">
-        <div class="ml">⏱ MARKET PHASES</div>
-        <div style="font-size:10px;font-weight:700;color:var(--gold);margin-top:4px">8:45 AM → Gift Nifty</div>
-        <div style="font-size:10px;color:var(--lbl);margin-top:3px">9:00 AM → Pre-Open</div>
-        <div style="font-size:10px;font-weight:700;color:var(--gold);margin-top:3px">9:30 AM → Equity ORB</div>
-        <div style="font-size:10px;font-weight:700;color:var(--pur);margin-top:3px">9:45 AM → FINNIFTY ORB</div>
-        <div style="font-size:10px;color:var(--red);margin-top:3px">3:10 PM → Hard Exit</div>
-      </div>
-    </div>`;
+def get_phase_label(phase):
+    labels = {
+        "PREMARKET_845":  "8:45 AM — Pre-Market Brief",
+        "PREMARKET_900":  "9:00 AM — Pre-Open Analysis",
+        "MARKET_OPEN_915":"9:15 AM — Market Open Watch",
+        "ORB_930":        "9:30 AM — ORB Confirmation",
+        "ORB_945_PLUS":   "9:45 AM — FINNIFTY ORB Signal",
+        "CLOSED":         "Market Closed — EOD Data",
+    }
+    return labels.get(phase,"—")
 
-  // Phase banner — only add once
-  if(d.phase_label && !$('phase-banner')){
-    const pb=document.createElement('div');
-    pb.id='phase-banner'; pb.className='phase-banner';
-    pb.textContent='🕐 '+d.phase_label.toUpperCase();
-    $('s1card').appendChild(pb);
-  }
+# ── GIFT NIFTY / SGX DATA ────────────────────────────────────────────
+def fetch_gift_nifty():
+    """Fetch Gift Nifty / SGX Nifty from multiple sources"""
+    gift = {"ltp":0,"chg":0,"gap":0,"gap_pct":0,"bias":"—","source":"—"}
+    hdrs = {
+        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept":"application/json, text/plain, */*",
+        "Accept-Language":"en-US,en;q=0.9",
+        "Referer":"https://www.google.com",
+    }
+    sources = [
+        ("https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEI?interval=1d&range=1d","yahoo1"),
+        ("https://query2.finance.yahoo.com/v8/finance/chart/%5ENSEI?interval=1d&range=1d","yahoo2"),
+        ("https://query1.finance.yahoo.com/v8/finance/chart/NIFTYBEES.NS?interval=1d&range=1d","niftybees"),
+        ("https://query2.finance.yahoo.com/v8/finance/chart/%5ECNXNIFTY?interval=1d&range=1d","cnx"),
+    ]
+    try:
+        for url, src in sources:
+            try:
+                r = requests.get(url, headers=hdrs, timeout=10)
+                if r.status_code == 200:
+                    d = r.json()
+                    result = d.get("chart",{}).get("result",[])
+                    if result:
+                        meta = result[0].get("meta",{})
+                        p = float(meta.get("regularMarketPrice",0) or 0)
+                        prev = float(meta.get("previousClose",0) or meta.get("chartPreviousClose",0) or 0)
+                        if p > 0:
+                            chg = round((p-prev)/prev*100,2) if prev>0 else 0
+                            gift["ltp"] = round(p,2)
+                            gift["chg"] = chg
+                            gift["source"] = src
+                            print(f"Gift Nifty OK: {p} {chg}% from {src}")
+                            break
+            except Exception as e:
+                print(f"Gift Nifty {src} error: {e}")
+                continue
 
-  // Pre-market analysis box
-  if(d.pre_market?.analysis && !$('pre-mkt-box')){
-    const ga=document.createElement('div');
-    ga.id='pre-mkt-box'; ga.className='pre-mkt-box';
-    ga.innerHTML=`<div style="font-size:8px;color:var(--gold);letter-spacing:2px;font-weight:700;margin-bottom:4px">🌐 PRE-MARKET ANALYSIS</div><div style="font-size:11px;color:var(--txt2);line-height:1.6">${d.pre_market.analysis}</div>`;
-    $('s1card').appendChild(ga);
-  }
+        if gift["ltp"] > 0:
+            gift["gap"] = round(gift["chg"] * gift["ltp"] / 100, 0)
+            gift["gap_pct"] = gift["chg"]
+            if gift["chg"] > 0.5:    gift["bias"] = "GAP UP ▲ BULLISH"
+            elif gift["chg"] > 0.2:  gift["bias"] = "SLIGHT GAP UP"
+            elif gift["chg"] < -0.5: gift["bias"] = "GAP DOWN ▼ BEARISH"
+            elif gift["chg"] < -0.2: gift["bias"] = "SLIGHT GAP DOWN"
+            else:                     gift["bias"] = "FLAT — WAIT"
+        else:
+            print("Gift Nifty: All sources failed")
+    except Exception as e:
+        print(f"Gift Nifty fetch error: {e}")
+    return gift
 
-  const bc=m.bias==='BULLISH'?'bull':m.bias==='BEARISH'?'bear':'neut';
-  const bl=m.bias==='BULLISH'?'PRE-MKT BULLISH':m.bias==='BEARISH'?'PRE-MKT BEARISH':'NEUTRAL';
-  $('mbdg').textContent=bl; $('mbdg').className='bdg '+bc;
-  $('aitxt').textContent=ai;
+def fetch_vix():
+    """Fetch India VIX from multiple sources"""
+    vix={"ltp":0,"chg":0,"prev":0,"status":"—","source":"—"}
+    hdrs_common={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                 "Accept":"application/json, text/plain, */*",
+                 "Accept-Language":"en-US,en;q=0.9"}
+    try:
+        # Method 1: Yahoo Finance ^INDIAVIX
+        try:
+            s=requests.Session()
+            s.headers.update(hdrs_common)
+            # Get cookies first
+            s.get("https://finance.yahoo.com",timeout=6)
+            r=s.get("https://query1.finance.yahoo.com/v8/finance/chart/%5EINDIAVIX?interval=1d&range=2d",
+                    timeout=8)
+            if r.ok:
+                d=r.json()
+                result=d.get("chart",{}).get("result",[])
+                if result:
+                    meta=result[0].get("meta",{})
+                    ltp=float(meta.get("regularMarketPrice",0))
+                    prev=float(meta.get("previousClose",0))
+                    if ltp>0:
+                        vix["ltp"]=round(ltp,2)
+                        vix["prev"]=round(prev,2)
+                        vix["chg"]=round(ltp-prev,2) if prev>0 else 0
+                        vix["source"]="Yahoo Finance"
+                        vix["status"]="<13 Safe" if ltp<13 else "13-16 Caution" if ltp<16 else ">16 HIGH RISK"
+                        print(f"VIX from Yahoo: {ltp}")
+                        return vix
+        except Exception as e:
+            print(f"VIX Yahoo error: {e}")
 
-  const dec=$('dec'); dec.style.display='flex';
-  const cfg=m.bias==='BULLISH'
-    ?{cls:'go',ic:'✅',tit:'BULLISH — LONG SETUPS READY',col:'var(--grn)',sub:`Gift Nifty ${gn.bias||'—'} · Nifty ${sgn(nC)}${nC.toFixed(2)}% · ${d.sectors?.[0]?.name||''} leading. Wait 9:30 AM ORB.`}
-    :m.bias==='BEARISH'
-    ?{cls:'sk',ic:'🚫',tit:'BEARISH — SHORTS + PUT OPTIONS',col:'var(--red)',sub:`Gift Nifty ${gn.bias||'—'} · Nifty ${nC.toFixed(2)}%. Short equities. FINNIFTY PE if 30-min low breaks.`}
-    :{cls:'wt',ic:'⏳',tit:'NEUTRAL — WAIT FOR ORB',col:'var(--blu)',sub:`Gift Nifty ${gn.bias||'flat'}. Mixed signals. Wait for first candle to confirm direction.`};
-  dec.className='dec '+cfg.cls;
-  $('dec-ic').textContent=cfg.ic;
-  $('dec-tit').textContent=cfg.tit; $('dec-tit').style.color=cfg.col;
-  $('dec-sub').textContent=cfg.sub;
-  sh('s1');
+        # Method 2: NSE India with session
+        try:
+            s=requests.Session()
+            s.headers.update({**hdrs_common,"Referer":"https://www.nseindia.com/"})
+            # Get session cookies
+            s.get("https://www.nseindia.com",timeout=8)
+            time.sleep(1)
+            r=s.get("https://www.nseindia.com/api/allIndices",timeout=8)
+            if r.ok:
+                data=r.json()
+                for idx in data.get("data",[]):
+                    name=str(idx.get("indexSymbol","") or idx.get("index",""))
+                    if "VIX" in name.upper():
+                        ltp=float(idx.get("last",0) or idx.get("indexValue",0) or 0)
+                        prev=float(idx.get("previousClose",0) or idx.get("yearHigh",0) or 0)
+                        if ltp>0:
+                            vix["ltp"]=round(ltp,2)
+                            vix["prev"]=round(prev,2)
+                            vix["chg"]=round(float(idx.get("change",0)),2)
+                            vix["source"]="NSE India"
+                            vix["status"]="<13 Safe" if ltp<13 else "13-16 Caution" if ltp<16 else ">16 HIGH RISK"
+                            print(f"VIX from NSE: {ltp}")
+                            return vix
+        except Exception as e:
+            print(f"VIX NSE error: {e}")
 
-  // ── 2. SECTORS ─────────────────────────────────────────────────────
-  const secs=d.sectors||[];
-  if(!secs.length){
-    $('slist').innerHTML='<div style="color:var(--mut);font-size:11px;padding:20px;text-align:center">Sector data loading... Run workflow after 8:45 AM</div>';
-    sh('s2'); return;
-  }
-  const mx=Math.max(...secs.map(s=>Math.abs(s.chg||0)),0.1);
-  const secRow=(s,i,top)=>{
-    const lp=s.leader_price||0, lc=s.leader_chg||0, c=s.chg||0;
-    const barW=Math.abs(c)/mx*100;
-    return `<div class="sr">
-      <div class="srk" style="color:${top?'var(--grn)':'var(--red)'}">${i+1}</div>
-      <div class="sn">
-        <div style="font-size:13px;font-weight:700">${s.name}</div>
-        <div class="sl2">${s.leader||''}${lp>0?' · ₹'+fmt(lp):''}
-          <span style="color:${col(lc)};margin-left:3px;font-weight:600">${lc!==0?sgn(lc)+Math.abs(lc).toFixed(2)+'%':''}</span>
-        </div>
-      </div>
-      <div style="text-align:right;min-width:70px">
-        <div class="sv" style="color:${col(c)};font-size:14px">${sgn(c)}${Math.abs(c).toFixed(2)}%</div>
-        <div style="margin-top:5px;display:flex;justify-content:flex-end">
-          <div class="sbw"><div class="sb" style="width:${barW}%;background:${c>=0?'var(--grn)':'var(--red)'}"></div></div>
-        </div>
-      </div>
-    </div>`;};
+        # Method 3: Try alternate Yahoo endpoint
+        try:
+            r=requests.get(
+                "https://query2.finance.yahoo.com/v10/finance/quoteSummary/%5EINDIAVIX?modules=price",
+                headers=hdrs_common,timeout=8)
+            if r.ok:
+                d=r.json()
+                price=d.get("quoteSummary",{}).get("result",[{}])[0].get("price",{})
+                ltp=float(price.get("regularMarketPrice",{}).get("raw",0))
+                prev=float(price.get("regularMarketPreviousClose",{}).get("raw",0))
+                if ltp>0:
+                    vix["ltp"]=round(ltp,2)
+                    vix["prev"]=round(prev,2)
+                    vix["chg"]=round(ltp-prev,2) if prev>0 else 0
+                    vix["source"]="Yahoo v10"
+                    vix["status"]="<13 Safe" if ltp<13 else "13-16 Caution" if ltp<16 else ">16 HIGH RISK"
+                    print(f"VIX from Yahoo v10: {ltp}")
+                    return vix
+        except Exception as e:
+            print(f"VIX Yahoo v10 error: {e}")
 
-  $('slist').innerHTML=
-    `<div class="shdr" style="color:var(--grn);background:var(--grdim)">📈 TOP SECTORS — LONG BIAS</div>`+
-    (secs.slice(0,4).length ? secs.slice(0,4).map((s,i)=>secRow(s,i,true)).join('') : '<div style="color:var(--mut);padding:8px;font-size:11px">No data</div>')+
-    `<div class="shdr" style="color:var(--red);background:var(--rdim);margin-top:9px">📉 WEAK SECTORS — SHORT BIAS</div>`+
-    (secs.slice(-4).length ? secs.slice(-4).reverse().map((s,i)=>secRow(s,i,false)).join('') : '<div style="color:var(--mut);padding:8px;font-size:11px">No data</div>')+
-    (d.pre_market?.top_gainers?.length ? `
-    <div class="shdr" style="color:var(--gold);background:rgba(240,165,0,0.08);margin-top:9px">⚡ PRE-MKT TOP MOVERS</div>`+
-    [...(d.pre_market.top_gainers||[]).slice(0,2), ...(d.pre_market.top_losers||[]).slice(0,2)].map(s=>`
-    <div class="sr">
-      <div style="font-family:JetBrains Mono,monospace;font-size:12px;font-weight:700;color:var(--gold);flex:1">${s.sym}</div>
-      <div style="font-size:9px;color:var(--mut);flex:1">${s.sec||''}</div>
-      <div style="text-align:right;min-width:70px">
-        <div style="font-family:JetBrains Mono,monospace;font-size:12px;font-weight:700;color:${col(s.chg||0)}">${sgn(s.chg||0)}${Math.abs(s.chg||0).toFixed(2)}%</div>
-        <div style="font-size:9px;color:var(--mut)">₹${fmt(s.ltp)}</div>
-      </div>
-    </div>`).join('') : '');
-  sh('s2');
+    except Exception as e:
+        print(f"VIX fetch error: {e}")
 
-  // ── 3. FINNIFTY ────────────────────────────────────────────────────
-  const fnAtm=fn.atm||atm(fn.ltp||0);
-  $('fn-ltp').textContent=fn.ltp>0?fmt(fn.ltp):'—'; $('fn-ltp').style.color=col(fn.chg||0);
-  $('fn-chg').textContent=fn.chg?(sgn(fn.chg)+fn.chg.toFixed(2)+'% ('+sgn(fn.pts||0)+(fn.pts||0).toFixed(1)+' pts)'):'—';
-  $('fn-chg').style.color=col(fn.chg||0);
-  $('fn-atm').textContent=fnAtm>0?fnAtm.toLocaleString('en-IN'):'—';
-  $('fn-exp').textContent=nextTue();
-  $('fn-prev').textContent=fn.prev>0?fmt(fn.prev):'—';
-  $('orb-o').textContent=fn.orb_open>0?fmt(fn.orb_open):'—';
-  $('orb-h').textContent=fn.orb_high>0?fmt(fn.orb_high):'—';
-  $('orb-l').textContent=fn.orb_low>0?fmt(fn.orb_low):'—';
-  $('orb-c').textContent=fn.orb_close>0?fmt(fn.orb_close):'—';
-  // Show/hide message based on data
-  const orbMsg=$('orb-msg');
-  if(fn.orb_high>0){
-    orbMsg.style.display='none';
-  } else {
-    orbMsg.textContent='⏰ Live candle data available from 9:45 AM IST on trading days';
-    orbMsg.style.display='block';
-  }
-  $('orb-ce').textContent=fn.orb_high>0?'₹'+fmt(fn.orb_high):'⏳ Forms at 9:45 AM';
-  $('orb-pe').textContent=fn.orb_low>0?'₹'+fmt(fn.orb_low):'⏳ Forms at 9:45 AM';
-  $('ce-str').textContent=fnAtm>0?fnAtm.toLocaleString('en-IN')+' CE':'—';
-  $('pe-str').textContent=fnAtm>0?fnAtm.toLocaleString('en-IN')+' PE':'—';
-  $('ce-prem').textContent=fn.ce_premium>0?`₹${fmt(fn.ce_premium)}`:'₹—';
-  $('pe-prem').textContent=fn.pe_premium>0?`₹${fmt(fn.pe_premium)}`:'₹—';
-  $('ce-sl').textContent=fn.ce_premium>0?`SL: ₹${fmt(Math.round(fn.ce_premium*0.7))} (30% loss)`:'SL: ₹—';
-  $('ce-tgt').textContent=fn.ce_premium>0?`TGT: ₹${fmt(Math.round(fn.ce_premium*1.5))} (50% gain)`:'TGT: ₹—';
-  $('pe-sl').textContent=fn.pe_premium>0?`SL: ₹${fmt(Math.round(fn.pe_premium*0.7))} (30% loss)`:'SL: ₹—';
-  $('pe-tgt').textContent=fn.pe_premium>0?`TGT: ₹${fmt(Math.round(fn.pe_premium*1.5))} (50% gain)`:'TGT: ₹—';
+    print("VIX: All sources failed — showing N/A")
+    return vix
 
-  // FINNIFTY SIGNAL
-  const sig=fn.signal||'WAIT';
-  const sb=$('sig'),st=$('sig-tit'),ss=$('sig-sub');
-  if(sig==='CE'){
-    sb.style.cssText='border-radius:11px;padding:13px;text-align:center;margin-bottom:10px;background:rgba(0,61,44,0.6);border:1px solid rgba(0,212,160,0.4)';
-    st.style.color='var(--grn)'; st.textContent='✅ BUY ATM CALL (CE) — HIGH BROKEN!';
-    ss.textContent=`FINNIFTY broke above ₹${fn.orb_high?fmt(fn.orb_high):'—'}. Buy ${fnAtm} CE. SL 30%. Target 50%. Exit by 3 PM.`;
-  } else if(sig==='PE'){
-    sb.style.cssText='border-radius:11px;padding:13px;text-align:center;margin-bottom:10px;background:rgba(61,0,21,0.6);border:1px solid rgba(255,69,96,0.4)';
-    st.style.color='var(--red)'; st.textContent='✅ BUY ATM PUT (PE) — LOW BROKEN!';
-    ss.textContent=`FINNIFTY broke below ₹${fn.orb_low?fmt(fn.orb_low):'—'}. Buy ${fnAtm} PE. SL 30%. Target 50%. Exit by 3 PM.`;
-  } else if(sig==='MONITOR'){
-    sb.style.cssText='border-radius:11px;padding:13px;text-align:center;margin-bottom:10px;background:rgba(10,31,61,0.6);border:1px solid rgba(240,165,0,0.4)';
-    st.style.color='var(--gold)'; st.textContent='👁️ MONITORING — WATCH FOR BREAKOUT';
-    ss.textContent=`ORB formed. High ₹${fn.orb_high?fmt(fn.orb_high):'—'} → CE · Low ₹${fn.orb_low?fmt(fn.orb_low):'—'} → PE.`;
-  } else {
-    sb.style.cssText='border-radius:11px;padding:13px;text-align:center;margin-bottom:10px;background:rgba(10,31,61,0.6);border:1px solid rgba(77,159,255,0.3)';
-    st.style.color='var(--blu)'; st.textContent='⏳ WAITING FOR 9:45 AM ORB';
-    ss.textContent=fn.orb_high>0?`ORB candle ready. High ₹${fmt(fn.orb_high)} · Low ₹${fmt(fn.orb_low)}. Watch for breakout.`:'First 30-min candle forms 9:15–9:45 AM. Do not enter before 9:45 AM.';
-  }
-  sh('s3');
+# ── API HELPERS ───────────────────────────────────────────────────────
+def hdrs(tok=None):
+    h={"Content-Type":"application/json","Accept":"application/json",
+       "X-UserType":"USER","X-SourceID":"WEB",
+       "X-ClientLocalIP":"192.168.1.1","X-ClientPublicIP":"106.193.147.98",
+       "X-MACAddress":"fe80::216e:6507:4b90:3719","X-PrivateKey":API_KEY}
+    if tok: h["Authorization"]=f"Bearer {tok}"
+    return h
 
-  // ── 4. ROCKERS ─────────────────────────────────────────────────────
-  const longs=d.long||[],shorts=d.short||[];
-  const tradeLongs=d.trade_long||longs.slice(0,2);
-  const tradeShorts=d.trade_short||shorts.slice(0,2);
-  $('rck-bdg').textContent=`${longs.filter(s=>s.score>=5).length}L · ${shorts.filter(s=>s.score>=5).length}S STRONG · ${d.universe||'Nifty 100'}`;
-  const rckCard=s=>{
-    const isL=s.side==='LONG';
-    const sc=s.score>=5?isL?'var(--grn)':'var(--red)':s.score>=3?'var(--gold)':'var(--mut)';
-    const ckeys=['EMA20','SUPERT','RSI','MACD','VOL','VWAP'];
-    const clbls={EMA20:isL?'EMA↑':'EMA↓',SUPERT:isL?'ST🟢':'ST🔴',RSI:`RSI ${s.rsi}`,MACD:isL?'MACD↑':'MACD↓',VOL:`VOL ${s.vol_ratio}x`,VWAP:`VWAP ${isL?'↑':'↓'}`};
-    return `<div class="rck" onclick="openChart('${s.sym}')" style="border-left:3px solid ${sc}">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;flex-wrap:wrap;gap:5px">
-        <div>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span style="font-family:JetBrains Mono,monospace;font-size:14px;font-weight:700;color:var(--gold)">${s.sym}</span>
-            <span style="font-size:8px;padding:2px 7px;border-radius:6px;font-weight:700;background:${isL?'rgba(0,212,160,0.1)':'rgba(255,69,96,0.1)'};color:${isL?'var(--grn)':'var(--red)'};border:1px solid ${isL?'rgba(0,212,160,0.2)':'rgba(255,69,96,0.2)'}">${isL?'📈 LONG':'📉 SHORT'}</span>
-            <span class="live" style="font-size:7px;padding:2px 6px"><span class="ldot" style="width:4px;height:4px"></span>LIVE</span>
-          </div>
-          <div style="font-size:9px;color:var(--mut);margin-top:3px;font-family:JetBrains Mono,monospace">${s.sec} · ₹${fmt(s.ltp)} <span style="color:${col(s.chg||0)}">${sgn(s.chg||0)}${Math.abs(s.chg||0).toFixed(2)}%</span></div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-family:JetBrains Mono,monospace;font-size:20px;font-weight:700;color:${sc}">${s.score}/6</div>
-          <div style="font-size:8px;color:${sc};letter-spacing:1px">${s.score>=5?'STRONG':s.score>=3?'MODERATE':'WEAK'}</div>
-        </div>
-      </div>
-      <div class="rconds">${ckeys.map(k=>`<span class="cond ${s.conds?.[k]?'cp':'cf'}">${clbls[k]}: ${s.conds?.[k]?'✓':'✗'}</span>`).join('')}</div>
-      <div class="hint">📊 Tap to open live 15-min TradingView chart</div>
-    </div>`;};
-  $('rck-long').innerHTML=longs.length?longs.map(rckCard).join(''):'<div style="color:var(--mut);font-size:11px;padding:10px;text-align:center">No strong long setups today</div>';
-  $('rck-short').innerHTML=shorts.length?shorts.map(rckCard).join(''):'<div style="color:var(--mut);font-size:11px;padding:10px;text-align:center">No strong short setups today</div>';
-  sh('s4');
+def login():
+    totp=pyotp.TOTP(TOTP_SECRET).now()
+    print(f"TOTP: {totp}")
+    r=requests.post(f"{BASE}/rest/auth/angelbroking/user/v1/loginByPassword",
+        json={"clientcode":CLIENT_ID,"password":PIN,"totp":totp},
+        headers=hdrs(),timeout=15)
+    d=r.json()
+    if d.get("status") and d.get("data",{}).get("jwtToken"):
+        print("✅ Login OK")
+        return d["data"]["jwtToken"]
+    raise Exception(f"Login failed: {d.get('message')}")
 
-  // ── 5. TRADE CANDIDATES ────────────────────────────────────────────
-  $('tcnt').textContent=`${tradeLongs.length}L · ${tradeShorts.length}S · TOP 2 EACH`;
+def get_quotes(tok, tokens):
+    all_data=[]
+    for i in range(0,len(tokens),50):
+        batch=tokens[i:i+50]
+        try:
+            r=requests.post(f"{BASE}/rest/secure/angelbroking/market/v1/quote/",
+                json={"mode":"FULL","exchangeTokens":{"NSE":batch}},
+                headers=hdrs(tok),timeout=15)
+            d=r.json()
+            if d.get("status") and d.get("data"):
+                all_data.extend(d["data"].get("fetched",[]))
+        except Exception as e:
+            print(f"Quote error: {e}")
+        time.sleep(0.3)
+    return all_data
 
-  const stkCard=s=>{
-    const isL=s.side==='LONG';
-    const sc=isL?'var(--grn)':'var(--red)';
-    const orbRange=s.orb_range||Math.abs((s.high||0)-(s.low||0));
-    return `<div class="stk" onclick="openChart('${s.sym}')" style="border-left:3px solid ${sc};background:linear-gradient(135deg,${isL?'rgba(0,212,160,0.05)':'rgba(255,69,96,0.05)'},var(--accent))">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;flex-wrap:wrap;gap:6px">
-        <div>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span style="font-family:JetBrains Mono,monospace;font-size:14px;font-weight:700;color:var(--gold)">${s.sym}</span>
-            <span style="font-size:8px;padding:2px 7px;border-radius:6px;font-weight:700;background:${isL?'rgba(0,212,160,0.1)':'rgba(255,69,96,0.1)'};color:${sc};border:1px solid ${isL?'rgba(0,212,160,0.2)':'rgba(255,69,96,0.2)'}">${isL?'📈 LONG':'📉 SHORT'}</span>
-          </div>
-          <div style="font-size:8px;color:var(--mut);margin-top:2px;text-transform:uppercase;letter-spacing:1px">${s.sec} · ROCKERS ${s.score}/6 · VWAP ₹${s.vwap?fmt(s.vwap):'—'}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-family:JetBrains Mono,monospace;font-size:18px;font-weight:700;color:${sc}">₹${fmt(s.ltp)}</div>
-          <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:${sc}">${sgn(s.chg||0)}${Math.abs(s.chg||0).toFixed(2)}%</div>
-        </div>
-      </div>
+def get_candles(tok, sym_tok, interval, fr, to):
+    try:
+        r=requests.post(f"{BASE}/rest/secure/angelbroking/historical/v1/getCandleData",
+            json={"exchange":"NSE","symboltoken":sym_tok,"interval":interval,
+                  "fromdate":fr,"todate":to},
+            headers=hdrs(tok),timeout=15)
+        return r.json()
+    except:
+        return {}
 
-      <!-- ORB INFO -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:8px">
-        <div style="background:rgba(0,212,160,0.08);border:1px solid rgba(0,212,160,0.2);border-radius:7px;padding:6px;text-align:center">
-          <div style="font-size:7px;color:var(--lbl);letter-spacing:1px;margin-bottom:2px">ORB HIGH</div>
-          <div style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;color:var(--grn)">₹${fmt(s.orb_high||s.high)}</div>
-        </div>
-        <div style="background:rgba(77,159,255,0.08);border:1px solid rgba(77,159,255,0.2);border-radius:7px;padding:6px;text-align:center">
-          <div style="font-size:7px;color:var(--lbl);letter-spacing:1px;margin-bottom:2px">ORB MID (SL)</div>
-          <div style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;color:var(--blu)">₹${fmt(s.orb_mid||((s.high+s.low)/2))}</div>
-        </div>
-        <div style="background:rgba(255,69,96,0.08);border:1px solid rgba(255,69,96,0.2);border-radius:7px;padding:6px;text-align:center">
-          <div style="font-size:7px;color:var(--lbl);letter-spacing:1px;margin-bottom:2px">ORB LOW</div>
-          <div style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;color:var(--red)">₹${fmt(s.orb_low||s.low)}</div>
-        </div>
-      </div>
+# ── INDICATORS ────────────────────────────────────────────────────────
+def ema(prices,n):
+    if not prices: return 0
+    if len(prices)<n: return prices[-1]
+    k=2/(n+1); e=sum(prices[:n])/n
+    for p in prices[n:]: e=p*k+e*(1-k)
+    return round(e,2)
 
-      <!-- ENTRY / SL / TARGET -->
-      <div class="lvls">
-        <div class="lb e"><span class="ll">${isL?'BUY ABOVE':'SELL BELOW'}</span><span class="lv">₹${fmt(s.entry)}</span></div>
-        <div class="lb s"><span class="ll">STOP LOSS</span><span class="lv">₹${fmt(s.sl)}</span></div>
-        <div class="lb t"><span class="ll">TARGET 1</span><span class="lv">₹${fmt(s.t1)}</span></div>
-      </div>
+def rsi(prices,n=14):
+    if len(prices)<n+1: return 50
+    g,l=[],[]
+    for i in range(1,len(prices)):
+        d=prices[i]-prices[i-1]
+        g.append(max(d,0)); l.append(max(-d,0))
+    ag=sum(g[:n])/n; al=sum(l[:n])/n
+    for i in range(n,len(g)):
+        ag=(ag*(n-1)+g[i])/n; al=(al*(n-1)+l[i])/n
+    return 100 if al==0 else round(100-100/(1+ag/al))
 
-      <!-- ORB RANGE INFO -->
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-        <span style="font-size:8px;padding:3px 8px;border-radius:7px;font-weight:600;background:rgba(240,165,0,0.1);color:var(--gold);border:1px solid rgba(240,165,0,0.2)">ORB Range: ₹${fmt(orbRange)}</span>
-        <span style="font-size:8px;padding:3px 8px;border-radius:7px;font-weight:600;background:rgba(77,159,255,0.1);color:var(--blu);border:1px solid rgba(77,159,255,0.2)">T1 = Range × 0.5 = ₹${fmt(orbRange*0.5)}</span>
-        <span style="font-size:8px;padding:3px 8px;border-radius:7px;font-weight:600;background:${isL?'rgba(0,212,160,0.1)':'rgba(255,69,96,0.1)'};color:${sc};border:1px solid ${isL?'rgba(0,212,160,0.2)':'rgba(255,69,96,0.2)'}">Qty: ${s.qty} shares (5x margin)</span>
-      </div>
+def macd_bull(prices):
+    if len(prices)<26: return True
+    k12,k26=2/13,2/27; e12=e26=prices[0]
+    for p in prices:
+        e12=p*k12+e12*(1-k12); e26=p*k26+e26*(1-k26)
+    return e12>e26
 
-      <!-- GTT OCO -->
-      <div class="gtt">
-        <div class="gtit">🎯 GTT OCO ORDER — COPY TO ANGEL ONE</div>
-        <div class="ggrid">
-          <div class="gi"><span class="gl">GTT TRIGGER (ENTRY)</span><span class="gv" style="color:var(--gold)">₹${fmt(s.gtt_trigger||s.entry)}</span></div>
-          <div class="gi"><span class="gl">LIMIT PRICE</span><span class="gv" style="color:var(--gold)">₹${fmt(s.gtt_limit||s.entry)}</span></div>
-          <div class="gi"><span class="gl">SL TRIGGER</span><span class="gv" style="color:var(--red)">₹${fmt(s.sl_trigger||s.sl)}</span></div>
-          <div class="gi"><span class="gl">TARGET T1</span><span class="gv" style="color:var(--grn)">₹${fmt(s.t1)}</span></div>
-        </div>
-        <div style="font-size:9px;color:var(--mut);margin-top:5px">
-          Risk ₹${fmt(s.risk_per_share)}/share · 
-          Max Loss: ₹${fmt(s.max_risk||0)} · 
-          Potential Profit: ₹${fmt(s.potential_profit||0)} · 
-          T2: ₹${fmt(s.t2)}
-        </div>
-      </div>
-      <div class="hint">📊 Tap to open live 15-min TradingView chart</div>
-    </div>`;};
+def st_bull(candles):
+    if not candles: return True
+    c=candles[-1]
+    return float(c[4])>(float(c[2])+float(c[3]))/2
 
-  $('long-list').innerHTML=tradeLongs.length?tradeLongs.map(stkCard).join(''):'<div style="color:var(--mut);font-size:11px;padding:10px;text-align:center">No long setups today</div>';
-  $('short-list').innerHTML=tradeShorts.length?tradeShorts.map(stkCard).join(''):'<div style="color:var(--mut);font-size:11px;padding:10px;text-align:center">No short setups today</div>';
-  sh('s5');
+def vol_ratio(vols):
+    if len(vols)<2: return 1.0
+    avg=sum(vols[:-1])/len(vols[:-1])
+    return round(vols[-1]/avg,1) if avg>0 else 1.0
 
-  // ── 6. CHECKLIST ───────────────────────────────────────────────────
-  const tL=tradeLongs[0],tS=tradeShorts[0];
-  const tL2=tradeLongs[1],tS2=tradeShorts[1];
-  const cks=[
-    {ic:'🌐',t:'8:45 AM · Check Gift Nifty gap direction',s:`Gap >+100pts = bullish. Gap <-100pts = bearish. ±50pts = flat. Today: ${gn.bias||'—'}`,col:'var(--grn)'},
-    {ic:'📊',t:`9:00 AM · India VIX: ${vix.ltp>0?vix.ltp.toFixed(2):'Check NSE'} ${vix.status?'— '+vix.status:''}`,s:`${vix.ltp>0?(vix.ltp<13?'Safe to trade. Normal size.':vix.ltp<16?'Caution. Reduce size 25%.':'HIGH RISK. Consider skipping.'):'Open nseindia.com → Markets → India VIX · <13 Safe · 13-16 Caution · >16 Skip'}`,col:vixCol},
-    {ic:'👁️',t:'9:15 AM · Market opens — WATCH ONLY. Zero entry.',s:'First 15 mins = manipulation. Institutions positioning. NEVER enter before 9:30 AM.',col:'var(--gold)'},
-    {ic:'⏱️',t:'9:30 AM · ORB DONE — Place ALL 4 GTT Orders Now',s:`LONG: ${tL?tL.sym:'-'} + ${tL2?tL2.sym:'-'} · SHORT: ${tS?tS.sym:'-'} + ${tS2?tS2.sym:'-'} · Place GTT OCO → Walk away`,col:'var(--gold)'},
-    {ic:'📈',t:`LONG 1: ${tL?tL.sym:'—'} · Entry ₹${tL?fmt(tL.entry):'—'} · SL ₹${tL?fmt(tL.sl):'—'} · T1 ₹${tL?fmt(tL.t1):'—'} · Qty ${tL?tL.qty:'—'}`,s:`ORB Range ₹${tL?fmt(tL.orb_range||0):'—'} · T1=Range×0.5 · 5x margin`,col:'var(--grn)'},
-    {ic:'📈',t:`LONG 2: ${tL2?tL2.sym:'—'} · Entry ₹${tL2?fmt(tL2.entry):'—'} · SL ₹${tL2?fmt(tL2.sl):'—'} · T1 ₹${tL2?fmt(tL2.t1):'—'} · Qty ${tL2?tL2.qty:'—'}`,s:`ORB Range ₹${tL2?fmt(tL2.orb_range||0):'—'} · T1=Range×0.5 · 5x margin`,col:'var(--grn)'},
-    {ic:'📉',t:`SHORT 1: ${tS?tS.sym:'—'} · Entry ₹${tS?fmt(tS.entry):'—'} · SL ₹${tS?fmt(tS.sl):'—'} · T1 ₹${tS?fmt(tS.t1):'—'} · Qty ${tS?tS.qty:'—'}`,s:`ORB Range ₹${tS?fmt(tS.orb_range||0):'—'} · T1=Range×0.5 · 5x margin`,col:'var(--red)'},
-    {ic:'📉',t:`SHORT 2: ${tS2?tS2.sym:'—'} · Entry ₹${tS2?fmt(tS2.entry):'—'} · SL ₹${tS2?fmt(tS2.sl):'—'} · T1 ₹${tS2?fmt(tS2.t1):'—'} · Qty ${tS2?tS2.qty:'—'}`,s:`ORB Range ₹${tS2?fmt(tS2.orb_range||0):'—'} · T1=Range×0.5 · 5x margin`,col:'var(--red)'},
-    {ic:'🟣',t:'9:45 AM · FINNIFTY ORB — First 30-min candle closes',s:`High ₹${fn.orb_high?fmt(fn.orb_high):'—'} → Buy CE · Low ₹${fn.orb_low?fmt(fn.orb_low):'—'} → Buy PE · ATM: ${fnAtm>0?fnAtm.toLocaleString('en-IN'):'—'}`,col:'var(--pur)'},
-    {ic:'🟣',t:`OPTIONS: ${sig==='CE'?'BUY CE — HIGH BROKEN ✅':sig==='PE'?'BUY PE — LOW BROKEN ✅':sig==='MONITOR'?'MONITORING BREAKOUT':'Wait for FINNIFTY ORB'}`,s:`ATM ${fnAtm>0?fnAtm.toLocaleString('en-IN'):'—'} · Target 50% premium · SL 30% premium · Hard exit 3:00 PM`,col:'var(--pur)'},
-    {ic:'🚫',t:'3:00 PM · Options HARD EXIT — No exceptions',s:'Close ALL options positions by 3:00 PM regardless of P&L.',col:'var(--red)'},
-    {ic:'🚫',t:'3:10 PM · Equity HARD EXIT — No exceptions',s:'Close ALL equity positions by 3:10 PM. Update Excel journal.',col:'var(--red)'},
-  ];
-  $('cklist').innerHTML=cks.map(c=>`<div class="ck"><div class="cki">${c.ic}</div><div><div class="ckt" style="color:${c.col}">${c.t}</div><div class="cks">${c.s}</div></div></div>`).join('');
-  sh('s6');
+def calc_vwap(candles):
+    if not candles: return 0
+    cum_tpv=0; cum_vol=0
+    for c in candles[-20:]:
+        tp=(float(c[2])+float(c[3])+float(c[4]))/3
+        vol=float(c[5])
+        cum_tpv+=tp*vol; cum_vol+=vol
+    return round(cum_tpv/cum_vol,2) if cum_vol>0 else 0
 
-  // ── 7. RISK RULES ──────────────────────────────────────────────────
-  $('rgrid').innerHTML=[
-    {l:'CAPITAL',v:'₹1,00,000',c:''},
-    {l:'MAX RISK/TRADE',v:`₹${Math.round(d.risk_amt||1000)} (${d.risk_pct||1}%)`,c:'r'},
-    {l:'EQUITY TRADES',v:'1 ONLY',c:''},
-    {l:'OPTIONS TRADES',v:'1 ONLY',c:''},
-    {l:'ROCKERS MIN',v:'5/6 SCORE',c:'g'},
-    {l:'VWAP FILTER',v:'MANDATORY',c:'g'},
-    {l:'EQUITY ORB',v:'9:30 AM IST',c:''},
-    {l:'OPTIONS ORB',v:'9:45 AM IST',c:''},
-    {l:'OPTIONS EXIT',v:'3:00 PM IST',c:'r'},
-    {l:'EQUITY EXIT',v:'3:10 PM IST',c:'r'},
-    {l:'ORDER TYPE',v:'GTT — OCO',c:'g'},
-    {l:'UNIVERSE',v:d.universe||'Nifty 100',c:''},
-  ].map(r=>`<div class="ri"><div class="rl">${r.l}</div><div class="rv ${r.c}">${r.v}</div></div>`).join('');
-  sh('s7'); sh('disc'); sh('ftr');
-}
-</script>
-</body>
-</html>
+# ── EXCEL JOURNAL ─────────────────────────────────────────────────────
+def update_excel(signals,ist):
+    fname="trading_journal.xlsx"
+    try:
+        wb=openpyxl.load_workbook(fname)
+        ws=wb.active
+    except:
+        wb=openpyxl.Workbook(); ws=wb.active
+        ws.title="SUBHA CAPITAL"
+        headers=["Date","Stock","Sector","Side","Score","Pre-Mkt Price",
+                 "Open","High","Low","VWAP","GTT Trigger","Limit Price",
+                 "Stop Loss","Target 1","Target 2","Qty","Max Risk ₹",
+                 "Bias","Phase","Result","P&L ₹","Notes"]
+        hf=PatternFill(start_color="0D1221",end_color="0D1221",fill_type="solid")
+        hfont=Font(bold=True,color="F0A500",size=10)
+        for col,h in enumerate(headers,1):
+            cell=ws.cell(row=1,column=col,value=h)
+            cell.fill=hf; cell.font=hfont
+            cell.alignment=Alignment(horizontal='center',vertical='center')
+        ws.row_dimensions[1].height=28
+        widths=[12,12,10,8,8,14,10,10,10,10,12,12,12,10,10,6,10,10,10,10,10,15]
+        for i,w in enumerate(widths,1):
+            ws.column_dimensions[get_column_letter(i)].width=w
+
+    date_str=ist.strftime("%d-%b-%Y")
+    for s in signals:
+        isL=s["side"]=="LONG"
+        risk=abs(s["entry"]-s["sl"])
+        row=[date_str,s["sym"],s["sec"],s["side"],f"{s['score']}/6",
+             s["ltp"],s.get("open",""),s.get("high",""),s.get("low",""),s.get("vwap",""),
+             s.get("gtt_trigger",s["entry"]),s.get("gtt_limit",s["entry"]),
+             s["sl"],s["t1"],s["t2"],s["qty"],round(risk*s["qty"],2),
+             s.get("bias",""),s.get("phase",""),"","",""]
+        rn=ws.max_row+1
+        fc="002D1C" if isL else "2D0010"
+        rf=PatternFill(start_color=fc,end_color=fc,fill_type="solid")
+        for col,val in enumerate(row,1):
+            cell=ws.cell(row=rn,column=col,value=val)
+            cell.fill=rf; cell.alignment=Alignment(horizontal='center')
+            if col==4: cell.font=Font(color="00D4A0" if isL else "FF4560",bold=True)
+            elif col in [11,12]: cell.font=Font(color="F0A500",bold=True)
+            elif col==13: cell.font=Font(color="FF4560",bold=True)
+            elif col in [14,15]: cell.font=Font(color="00D4A0",bold=True)
+    wb.save(fname)
+    print(f"✅ Excel: {ws.max_row-1} signals")
+
+# ── MAIN ──────────────────────────────────────────────────────────────
+def main():
+    ist=datetime.now(IST)
+    phase=get_phase(ist)
+    phase_label=get_phase_label(phase)
+    print(f"═══ SUBHA CAPITAL v7 — {ist.strftime('%d %b %Y %H:%M IST')} ═══")
+    print(f"Phase: {phase} — {phase_label}")
+
+    mkt_open=(ist.hour>9 or (ist.hour==9 and ist.minute>=15)) and \
+             (ist.hour<15 or (ist.hour==15 and ist.minute<30))
+
+    # ── GIFT NIFTY (8:45 AM phase) ───────────────────────────────────
+    print("Fetching Gift Nifty...")
+    gift = fetch_gift_nifty()
+    print(f"Gift Nifty: {gift['ltp']} {gift['chg']}% — {gift['bias']}")
+
+    print("Fetching India VIX...")
+    vix_data = fetch_vix()
+    print(f"VIX: {vix_data['ltp']} | Status: {vix_data['status']} | Source: {vix_data['source']}")
+
+    # ── ANGEL ONE LOGIN ───────────────────────────────────────────────
+    jwt=login()
+
+    # ── FETCH ALL QUOTES ──────────────────────────────────────────────
+    stk_toks=[v["token"] for v in STOCKS.values()]
+    idx_toks=list(INDICES.values())
+    fetched=get_quotes(jwt,stk_toks+idx_toks)
+
+    Q={}
+    for q in fetched:
+        t=q.get("symbolToken","")
+        for sym,info in STOCKS.items():
+            if info["token"]==t: Q[sym]=q; break
+        for idx,tok in INDICES.items():
+            if tok==t: Q[idx]=q; break
+    print(f"Quotes: {len(Q)}")
+
+    # ── PRICE FUNCTIONS ───────────────────────────────────────────────
+    def F(s,field,default=0):
+        return float(Q.get(s,{}).get(field,default) or default)
+
+    def ltp(s):
+        v=F(s,"ltp")
+        return round(v,2) if v>0 else round(F(s,"close"),2)
+
+    def prev_close(s):
+        return round(F(s,"close"),2)
+
+    def pct_chg(s):
+        pc=F(s,"percentChange")
+        if pc!=0: return round(pc,2)
+        cur=ltp(s); prev=prev_close(s)
+        if cur>0 and prev>0 and cur!=prev:
+            return round((cur-prev)/prev*100,2)
+        return 0.0
+
+    def pts_chg(s):
+        nc=F(s,"netChange")
+        if nc!=0: return round(nc,2)
+        return round(ltp(s)-prev_close(s),2)
+
+    def get_today_ohlc(sym, tok):
+        """Fetch today's intraday OHLC from Angel One"""
+        try:
+            ist_now = datetime.now(IST)
+            today = ist_now.strftime("%Y-%m-%d")
+            cd = get_candles(tok, STOCKS[sym]["token"], "ONE_MINUTE",
+                           f"{today} 09:15", f"{today} 15:30")
+            if cd.get("status") and cd.get("data"):
+                data = cd["data"]
+                if data:
+                    o = float(data[0][1])   # First candle open
+                    h = max(float(x[2]) for x in data)  # Day high
+                    l = min(float(x[3]) for x in data)  # Day low
+                    c = float(data[-1][4])  # Last candle close
+                    return {"open":round(o,2),"high":round(h,2),"low":round(l,2),"close":round(c,2)}
+        except: pass
+        return None
+
+    def day_high(s):
+        # Try quote first (works during market hours)
+        v=round(F(s,"high"),2)
+        if v>0: return v
+        # Fallback: use last daily candle high
+        c=candles.get(s,[])
+        return round(float(c[-1][2]),2) if c else ltp(s)
+
+    def day_low(s):
+        v=round(F(s,"low"),2)
+        if v>0: return v
+        c=candles.get(s,[])
+        return round(float(c[-1][3]),2) if c else ltp(s)
+
+    def day_open(s):
+        v=round(F(s,"open"),2)
+        if v>0: return v
+        c=candles.get(s,[])
+        return round(float(c[-1][1]),2) if c else ltp(s)
+
+    # ── INDEX DATA ────────────────────────────────────────────────────
+    nifty_ltp  = ltp("NIFTY50")
+    nifty_chg  = pct_chg("NIFTY50")
+    nifty_pts  = pts_chg("NIFTY50")
+    nifty_prev = prev_close("NIFTY50")
+    fn_ltp     = ltp("FINNIFTY")
+    fn_chg     = pct_chg("FINNIFTY")
+    fn_pts     = pts_chg("FINNIFTY")
+    fn_prev    = prev_close("FINNIFTY")
+
+    print(f"Nifty: {nifty_ltp} | chg: {nifty_chg}% | pts: {nifty_pts}")
+    print(f"FINNIFTY: {fn_ltp} | chg: {fn_chg}% | pts: {fn_pts}")
+
+    # Bias
+    bias="BULLISH" if nifty_chg>0.3 else "BEARISH" if nifty_chg<-0.3 else "NEUTRAL"
+
+    # ── PRE-MARKET ANALYSIS (9:00 AM phase) ──────────────────────────
+    # Top gainers and losers from Nifty 100
+    pre_market = []
+    for sym in list(STOCKS.keys())[:20]:  # Check top 20 stocks
+        p=ltp(sym); c=pct_chg(sym)
+        if p>0:
+            pre_market.append({"sym":sym,"ltp":p,"chg":c,"sec":STOCKS[sym]["sec"]})
+    pre_market.sort(key=lambda x:x["chg"],reverse=True)
+    top_gainers=pre_market[:3]
+    top_losers=pre_market[-3:][::-1]
+
+    # ── FINNIFTY ATM + ORB ────────────────────────────────────────────
+    fn_atm=round(fn_ltp/50)*50 if fn_ltp>0 else 0
+    fn_orb={"open":0,"high":0,"low":0,"close":0,"signal":"WAIT",
+            "ce_prem":0,"pe_prem":0}
+
+    # Fetch ORB after 9:45 AM OR when market closed (EOD data still available)
+    if phase in ["ORB_945_PLUS","CLOSED","MARKET_OPEN_915","ORB_930"]:
+        try:
+            fn_date=ist.strftime("%Y-%m-%d")
+            # Try broader time window to ensure we get the candle
+            fr_time=f"{fn_date} 09:00"
+            to_time=f"{fn_date} 15:30"
+
+            for interval,label in [("THIRTY_MINUTE","30min"),("FIFTEEN_MINUTE","15min"),("ONE_MINUTE","1min")]:
+                try:
+                    cd=get_candles(jwt,"26037",interval,fr_time,to_time)
+                    candle_list=cd.get("data",[]) if cd.get("status") else []
+                    print(f"FINNIFTY {label}: {len(candle_list)} candles")
+
+                    if candle_list:
+                        if interval=="THIRTY_MINUTE":
+                            # First 30-min candle = 9:15-9:45 ORB
+                            c=candle_list[0]
+                            fn_orb["open"] =round(float(c[1]),2)
+                            fn_orb["high"] =round(float(c[2]),2)
+                            fn_orb["low"]  =round(float(c[3]),2)
+                            fn_orb["close"]=round(float(c[4]),2)
+
+                        elif interval=="FIFTEEN_MINUTE":
+                            # Combine first 2 × 15-min candles = 30-min ORB
+                            c2=candle_list[:2]
+                            if len(c2)>=1:
+                                fn_orb["open"] =round(float(c2[0][1]),2)
+                                fn_orb["high"] =round(max(float(x[2]) for x in c2),2)
+                                fn_orb["low"]  =round(min(float(x[3]) for x in c2),2)
+                                fn_orb["close"]=round(float(c2[-1][4]),2)
+
+                        elif interval=="ONE_MINUTE":
+                            # Build 30-min ORB from first 30 × 1-min candles
+                            c30=candle_list[:30]
+                            if c30:
+                                fn_orb["open"] =round(float(c30[0][1]),2)
+                                fn_orb["high"] =round(max(float(x[2]) for x in c30),2)
+                                fn_orb["low"]  =round(min(float(x[3]) for x in c30),2)
+                                fn_orb["close"]=round(float(c30[-1][4]),2)
+
+                        # Set signal if we got valid data
+                        if fn_orb["high"]>0 and fn_orb["low"]>0:
+                            if fn_ltp>0:
+                                if fn_ltp>fn_orb["high"]:   fn_orb["signal"]="CE"
+                                elif fn_ltp<fn_orb["low"]:  fn_orb["signal"]="PE"
+                                else:                        fn_orb["signal"]="MONITOR"
+                            else:
+                                fn_orb["signal"]="MONITOR"
+                            print(f"ORB OK: O={fn_orb['open']} H={fn_orb['high']} L={fn_orb['low']} C={fn_orb['close']} Sig={fn_orb['signal']}")
+                            break  # Got data, stop trying
+                        else:
+                            print(f"FINNIFTY {label}: candles exist but OHLC = 0, trying next interval")
+                except Exception as e:
+                    print(f"FINNIFTY {label} error: {e}")
+                    continue
+
+            if fn_orb["high"]==0:
+                print("FINNIFTY ORB: All intervals returned empty — market may be closed or pre-market")
+
+        except Exception as e:
+            print(f"FINNIFTY ORB fetch error: {e}")
+
+    if fn_ltp>0:
+        import math as _m
+        days=max(1,3)
+        fn_orb["ce_prem"]=round(fn_ltp*0.006*_m.sqrt(days/5),0)
+        fn_orb["pe_prem"]=round(fn_orb["ce_prem"]*0.92,0)
+
+    # ── SECTORS ───────────────────────────────────────────────────────
+    sectors=[]
+    for sec,stks in SECTOR_STOCKS.items():
+        valid=[s for s in stks if ltp(s)>0]
+        if not valid:
+            valid=stks[:1]
+        chgs=[pct_chg(s) for s in valid]
+        # Weighted avg: use abs(chg) weighted
+        sec_chg=round(sum(chgs)/len(chgs),2) if chgs else 0.0
+        # Leader = stock with highest absolute % change
+        ldr=max(valid, key=lambda s:abs(pct_chg(s))) if valid else stks[0]
+        ldr_ltp=ltp(ldr); ldr_chg=pct_chg(ldr); ldr_pts=pts_chg(ldr)
+        sectors.append({
+            "name":sec,"chg":sec_chg,"leader":ldr,
+            "leader_price":ldr_ltp,"leader_chg":ldr_chg,
+            "leader_pts":ldr_pts,"idx_price":0,
+            "stocks":[{"sym":s,"ltp":ltp(s),"chg":pct_chg(s)} for s in valid]
+        })
+        print(f"  Sector {sec}: {sec_chg}% | Leader: {ldr} {ldr_chg}%")
+    sectors.sort(key=lambda x:x["chg"],reverse=True)
+    print(f"Top: {sectors[0]['name']} {sectors[0]['chg']}% | Bot: {sectors[-1]['name']} {sectors[-1]['chg']}%")
+
+    # ── CANDLES + ROCKERS (9:30 AM phase onwards) ─────────────────────
+    longs=[]; shorts=[]
+    candles={}
+
+    if phase in ["ORB_930","ORB_945_PLUS","CLOSED","PREMARKET_900","PREMARKET_845"]:
+        to_d=ist.strftime("%Y-%m-%d %H:%M")
+        fr_d=(ist-timedelta(days=60)).strftime("%Y-%m-%d %H:%M")
+        print(f"Fetching candles...")
+        for i,(sym,info) in enumerate(STOCKS.items()):
+            try:
+                cd=get_candles(jwt,info["token"],"ONE_DAY",fr_d,to_d)
+                if cd.get("status") and cd.get("data"):
+                    candles[sym]=cd["data"]
+                time.sleep(0.2)
+                if (i+1)%25==0: print(f"  Candles: {i+1}/{len(STOCKS)}")
+            except: pass
+        print(f"Candles: {len(candles)}")
+
+        # ROCKERS scan
+        top4=[s["name"] for s in sectors[:4]]
+        bot4=[s["name"] for s in sectors[-4:]]
+        risk_amt=CAPITAL*RISK_PCT/100
+
+        for sym,info in STOCKS.items():
+            p=ltp(sym)
+            if p<=0: continue
+            c=candles.get(sym,[])
+            closes=[float(x[4]) for x in c] if c else [p]
+            vols=[float(x[5]) for x in c] if c else [1]
+
+            # Use quote OHLC if available (market hours)
+            # Else use last daily candle OHLC
+            h=day_high(sym); l=day_low(sym); op=day_open(sym)
+
+            # If high/low still = ltp (fallback), use last candle
+            if h==p and c:
+                h=round(float(c[-1][2]),2)
+                l=round(float(c[-1][3]),2)
+                op=round(float(c[-1][1]),2)
+                print(f"  {sym}: Using candle OHLC H={h} L={l} O={op}")
+            vwap_val=calc_vwap(c)
+            e20=ema(closes,20); r=rsi(closes); vr=vol_ratio(vols)
+            macd_b=macd_bull(closes); st_b=st_bull(c)
+
+            if info["sec"] in top4:
+                vwap_ok=p>vwap_val if vwap_val>0 else p>e20
+                conds={"EMA20":p>e20,"SUPERT":st_b,"RSI":50<=r<=70,
+                       "MACD":macd_b,"VOL":vr>=1.5,"VWAP":vwap_ok}
+                sc=sum(conds.values())
+                # ORB-based entry/SL/target
+                orb_mid  = round((h+l)/2, 2)
+                orb_range= round(h-l, 2)
+                en       = round(h+0.05, 2)          # Just above ORB high
+                sl       = round(orb_mid-0.05, 2)    # ORB midpoint SL
+                rp       = round(en-sl, 2)
+                if rp<=0: continue
+                t1       = round(en + orb_range*0.5, 2)  # 0.5x range target
+                t2       = round(en + orb_range*1.0, 2)  # 1.0x range target
+                # Intraday qty: 5x leverage (20% margin)
+                intraday_capital = CAPITAL * 5
+                qty = max(1, math.floor(intraday_capital / en))
+                max_risk_qty = max(1, math.floor(risk_amt / rp))
+                qty = min(qty, max_risk_qty * 5)  # Cap at 5x risk qty
+                longs.append({
+                    "sym":sym,"sec":info["sec"],"ltp":p,"chg":pct_chg(sym),
+                    "open":op,"high":h,"low":l,"vwap":vwap_val,
+                    "orb_high":h,"orb_low":l,"orb_mid":orb_mid,"orb_range":orb_range,
+                    "score":sc,"rsi":r,"vol_ratio":vr,
+                    "conds":{k:bool(v) for k,v in conds.items()},
+                    "entry":en,"sl":sl,"t1":t1,"t2":t2,
+                    "gtt_trigger":en,"gtt_limit":round(en+0.05,2),
+                    "sl_trigger":sl,"sl_limit":round(sl-0.05,2),
+                    "qty":qty,"risk_per_share":rp,
+                    "max_risk":round(rp*max_risk_qty,0),
+                    "potential_profit":round((t1-en)*qty,0),
+                    "side":"LONG","bias":bias,"phase":phase
+                })
+
+            if info["sec"] in bot4:
+                vwap_ok=p<vwap_val if vwap_val>0 else p<e20
+                conds={"EMA20":p<e20,"SUPERT":not st_b,"RSI":30<=r<=50,
+                       "MACD":not macd_b,"VOL":vr>=1.5,"VWAP":vwap_ok}
+                sc=sum(conds.values())
+                # ORB-based entry/SL/target
+                orb_mid  = round((h+l)/2, 2)
+                orb_range= round(h-l, 2)
+                en       = round(l-0.05, 2)          # Just below ORB low
+                sl       = round(orb_mid+0.05, 2)    # ORB midpoint SL
+                rp       = round(sl-en, 2)
+                if rp<=0: continue
+                t1       = round(en - orb_range*0.5, 2)  # 0.5x range target
+                t2       = round(en - orb_range*1.0, 2)  # 1.0x range target
+                # Intraday qty: 5x leverage (20% margin)
+                intraday_capital = CAPITAL * 5
+                qty = max(1, math.floor(intraday_capital / en))
+                max_risk_qty = max(1, math.floor(risk_amt / rp))
+                qty = min(qty, max_risk_qty * 5)
+                shorts.append({
+                    "sym":sym,"sec":info["sec"],"ltp":p,"chg":pct_chg(sym),
+                    "open":op,"high":h,"low":l,"vwap":vwap_val,
+                    "orb_high":h,"orb_low":l,"orb_mid":orb_mid,"orb_range":orb_range,
+                    "score":sc,"rsi":r,"vol_ratio":vr,
+                    "conds":{k:bool(v) for k,v in conds.items()},
+                    "entry":en,"sl":sl,"t1":t1,"t2":t2,
+                    "gtt_trigger":en,"gtt_limit":round(en-0.05,2),
+                    "sl_trigger":sl,"sl_limit":round(sl+0.05,2),
+                    "qty":qty,"risk_per_share":rp,
+                    "max_risk":round(rp*max_risk_qty,0),
+                    "potential_profit":round((en-t1)*qty,0),
+                    "side":"SHORT","bias":bias,"phase":phase
+                })
+
+        longs.sort(key=lambda x:x["score"],reverse=True)
+        shorts.sort(key=lambda x:x["score"],reverse=True)
+        print(f"Longs: {len(longs)} | Shorts: {len(shorts)}")
+        print(f"Top 2 Long: {[s['sym'] for s in longs[:2]]}")
+        print(f"Top 2 Short: {[s['sym'] for s in shorts[:2]]}")
+
+        # Excel journal — top 2 only for actual trades
+        all_signals=[{**s} for s in longs[:2]+shorts[:2]]
+        if all_signals:
+            try: update_excel(all_signals,ist)
+            except Exception as e: print(f"Excel error: {e}")
+
+    # ── SAVE DATA.JSON ────────────────────────────────────────────────
+    data={
+        "generated_at": ist.strftime("%d %b %Y %I:%M %p IST"),
+        "phase": phase,
+        "phase_label": phase_label,
+        "market_status": "OPEN" if mkt_open else "PRE-MARKET" if ist.hour<9 or (ist.hour==9 and ist.minute<15) else "CLOSED",
+        "is_live": True,
+        "market": {
+            "nifty50": {"ltp":nifty_ltp,"chg":nifty_chg,"pts":nifty_pts,"prev":nifty_prev},
+            "vix":     {"ltp":vix_data["ltp"],"chg":vix_data["chg"],"prev":vix_data["prev"],
+                        "status":vix_data["status"],"source":vix_data["source"]},
+            "bias":    bias
+        },
+        "gift_nifty": gift,
+        "pre_market": {
+            "top_gainers": top_gainers,
+            "top_losers":  top_losers,
+            "analysis":    f"{'Gap Up' if gift['chg']>0.3 else 'Gap Down' if gift['chg']<-0.3 else 'Flat'} open expected. {bias} bias."
+        },
+        "finnifty": {
+            "ltp":fn_ltp,"chg":fn_chg,"pts":fn_pts,"prev":fn_prev,"atm":fn_atm,
+            "orb_open":fn_orb["open"],"orb_high":fn_orb["high"],
+            "orb_low":fn_orb["low"],"orb_close":fn_orb["close"],
+            "signal":fn_orb["signal"],
+            "ce_premium":fn_orb["ce_prem"],"pe_premium":fn_orb["pe_prem"],
+            "ce_sl":round(fn_orb["ce_prem"]*0.7,0),
+            "ce_tgt":round(fn_orb["ce_prem"]*1.5,0),
+            "pe_sl":round(fn_orb["pe_prem"]*0.7,0),
+            "pe_tgt":round(fn_orb["pe_prem"]*1.5,0),
+        },
+        "sectors":  sectors,
+        "long":     longs[:5],    # ROCKERS screener — top 5
+        "short":    shorts[:5],   # ROCKERS screener — top 5
+        "trade_long":  longs[:2], # Trade candidates — top 2 only
+        "trade_short": shorts[:2],# Trade candidates — top 2 only
+        "capital":  CAPITAL,
+        "risk_pct": RISK_PCT,
+        "risk_amt": CAPITAL*RISK_PCT/100,
+        "universe": f"Nifty 100 — {len(STOCKS)} stocks",
+    }
+
+    with open("data.json","w") as f:
+        json.dump(data,f,indent=2)
+    print(f"✅ data.json saved! Phase: {phase}")
+    print(f"═══ DONE ═══")
+
+if __name__=="__main__":
+    main()
