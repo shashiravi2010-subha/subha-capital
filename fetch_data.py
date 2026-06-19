@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """
-SUBHA CAPITAL — Market Data Fetcher v7
-4-Phase Pre-Market Intelligence System:
-  8:45 AM → Gift Nifty + Pre-market sentiment
-  9:00 AM → Pre-open + Sector scan  
-  9:30 AM → ORB + Stock selection (ROCKERS)
-  9:45 AM → FINNIFTY ORB + Options signal
+SUBHA CAPITAL — Market Data Fetcher V10
+Data-backed intraday system for NSE
+
+KEY IMPROVEMENTS:
+- Universe: Top 20 F&O stocks only (most liquid)
+- First candle move filter (skip if >1% already moved)
+- ATR filter (skip if ATR < ₹15)
+- Best 1 Long + 1 Short only
+- ORB-based entry/SL/target
+- 5x intraday margin qty
+- Gap filter (skip if gap >2%)
 """
 
 import os,json,math,pyotp,requests,pytz,time,openpyxl
@@ -19,280 +24,131 @@ TOTP_SECRET = os.environ["ANGEL_TOTP_SECRET"]
 PIN         = os.environ["ANGEL_PIN"]
 CAPITAL     = 100000
 RISK_PCT    = 1.0
+MARGIN      = 5       # 5x intraday leverage
 IST         = pytz.timezone("Asia/Kolkata")
 BASE        = "https://apiconnect.angelone.in"
 
-# ── NIFTY 100 UNIVERSE ────────────────────────────────────────────────
+# ── TOP 20 F&O STOCKS — Most liquid, tightest spread ─────────────────
 STOCKS = {
-    "HDFCBANK":   {"token":"1333",  "sec":"BANKING","slp":0.9},
-    "ICICIBANK":  {"token":"4963",  "sec":"BANKING","slp":0.85},
-    "SBIN":       {"token":"3045",  "sec":"BANKING","slp":1.0},
-    "AXISBANK":   {"token":"5900",  "sec":"BANKING","slp":1.0},
-    "KOTAKBANK":  {"token":"1922",  "sec":"BANKING","slp":0.85},
-    "BANKBARODA": {"token":"4668",  "sec":"BANKING","slp":1.2},
-    "INDUSINDBK": {"token":"5258",  "sec":"BANKING","slp":1.1},
-    "CANBK":      {"token":"10794", "sec":"BANKING","slp":1.2},
-    "BAJFINANCE": {"token":"317",   "sec":"FINANCE","slp":0.85},
-    "BAJAJFINSV": {"token":"16675", "sec":"FINANCE","slp":0.90},
-    "HDFCLIFE":   {"token":"467",   "sec":"FINANCE","slp":0.85},
-    "SBILIFE":    {"token":"21808", "sec":"FINANCE","slp":0.85},
-    "ICICIPRULI": {"token":"18529", "sec":"FINANCE","slp":0.85},
-    "CHOLAFIN":   {"token":"685",   "sec":"FINANCE","slp":1.0},
-    "MUTHOOTFIN": {"token":"13923", "sec":"FINANCE","slp":1.0},
-    "PFC":        {"token":"14299", "sec":"FINANCE","slp":1.0},
-    "RECLTD":     {"token":"21614", "sec":"FINANCE","slp":1.0},
-    "SHRIRAMFIN": {"token":"4306",  "sec":"FINANCE","slp":1.0},
-    "INFY":       {"token":"1594",  "sec":"IT","slp":0.80},
-    "TCS":        {"token":"11536", "sec":"IT","slp":0.75},
-    "WIPRO":      {"token":"3787",  "sec":"IT","slp":0.90},
-    "HCLTECH":    {"token":"7229",  "sec":"IT","slp":0.85},
-    "TECHM":      {"token":"13538", "sec":"IT","slp":1.0},
-    "LTIM":       {"token":"17818", "sec":"IT","slp":0.90},
-    "MPHASIS":    {"token":"4503",  "sec":"IT","slp":1.0},
-    "PERSISTENT": {"token":"18365", "sec":"IT","slp":1.0},
-    "COFORGE":    {"token":"11543", "sec":"IT","slp":1.0},
-    "OFSS":       {"token":"10738", "sec":"IT","slp":0.85},
-    "MARUTI":     {"token":"10999", "sec":"AUTO","slp":0.85},
-    "MM":         {"token":"2031",  "sec":"AUTO","slp":0.80},
-    "TATAMOTORS": {"token":"3456",  "sec":"AUTO","slp":1.2},
-    "BAJAJ-AUTO": {"token":"16669", "sec":"AUTO","slp":0.90},
-    "HEROMOTOCO": {"token":"1348",  "sec":"AUTO","slp":0.90},
-    "EICHERMOT":  {"token":"910",   "sec":"AUTO","slp":0.90},
-    "TVSMOTOR":   {"token":"3518",  "sec":"AUTO","slp":1.0},
-    "ASHOKLEY":   {"token":"212",   "sec":"AUTO","slp":1.2},
-    "SUNPHARMA":  {"token":"3351",  "sec":"PHARMA","slp":0.75},
-    "DRREDDY":    {"token":"881",   "sec":"PHARMA","slp":0.80},
-    "CIPLA":      {"token":"694",   "sec":"PHARMA","slp":0.85},
-    "DIVISLAB":   {"token":"10940", "sec":"PHARMA","slp":0.85},
-    "AUROPHARMA": {"token":"275",   "sec":"PHARMA","slp":1.0},
-    "ALKEM":      {"token":"13634", "sec":"PHARMA","slp":0.90},
-    "BIOCON":     {"token":"524",   "sec":"PHARMA","slp":1.1},
-    "UPL":        {"token":"11287", "sec":"PHARMA","slp":1.1},
-    "TATASTEEL":  {"token":"3499",  "sec":"METAL","slp":1.0},
-    "JSWSTEEL":   {"token":"11723", "sec":"METAL","slp":1.0},
-    "HINDALCO":   {"token":"1363",  "sec":"METAL","slp":1.1},
-    "COALINDIA":  {"token":"20374", "sec":"METAL","slp":1.0},
-    "VEDL":       {"token":"3063",  "sec":"METAL","slp":1.2},
-    "NMDC":       {"token":"15332", "sec":"METAL","slp":1.1},
-    "HINDUNILVR": {"token":"1394",  "sec":"FMCG","slp":0.70},
-    "ITC":        {"token":"1660",  "sec":"FMCG","slp":0.75},
-    "BRITANNIA":  {"token":"547",   "sec":"FMCG","slp":0.80},
-    "NESTLEIND":  {"token":"17963", "sec":"FMCG","slp":0.70},
-    "DABUR":      {"token":"772",   "sec":"FMCG","slp":0.80},
-    "GODREJCP":   {"token":"10099", "sec":"FMCG","slp":0.85},
-    "MARICO":     {"token":"4067",  "sec":"FMCG","slp":0.85},
-    "COLPAL":     {"token":"1367",  "sec":"FMCG","slp":0.80},
-    "RELIANCE":   {"token":"2885",  "sec":"ENERGY","slp":0.80},
-    "ONGC":       {"token":"2475",  "sec":"ENERGY","slp":0.90},
-    "BPCL":       {"token":"526",   "sec":"ENERGY","slp":1.0},
-    "NTPC":       {"token":"11630", "sec":"ENERGY","slp":0.90},
-    "POWERGRID":  {"token":"14977", "sec":"ENERGY","slp":0.85},
-    "TATAPOWER":  {"token":"3426",  "sec":"ENERGY","slp":1.1},
-    "IOC":        {"token":"1624",  "sec":"ENERGY","slp":1.0},
-    "DLF":        {"token":"14732", "sec":"REALTY","slp":1.0},
-    "GODREJPROP": {"token":"9742",  "sec":"REALTY","slp":1.0},
-    "OBEROIRLTY": {"token":"20316", "sec":"REALTY","slp":1.0},
-    "LT":         {"token":"11483", "sec":"INFRA","slp":0.85},
-    "ADANIPORTS": {"token":"15083", "sec":"INFRA","slp":1.0},
-    "SIEMENS":    {"token":"3150",  "sec":"INFRA","slp":0.90},
-    "ABB":        {"token":"13",    "sec":"INFRA","slp":0.90},
-    "BEL":        {"token":"383",   "sec":"INFRA","slp":1.0},
-    "HAL":        {"token":"10455", "sec":"INFRA","slp":1.0},
-    "BHEL":       {"token":"438",   "sec":"INFRA","slp":1.2},
-    "TITAN":      {"token":"3506",  "sec":"CONSUMER","slp":0.85},
-    "ASIANPAINT": {"token":"236",   "sec":"CONSUMER","slp":0.80},
-    "PIDILITIND": {"token":"2664",  "sec":"CONSUMER","slp":0.80},
-    "HAVELLS":    {"token":"10350", "sec":"CONSUMER","slp":0.90},
-    "VOLTAS":     {"token":"3718",  "sec":"CONSUMER","slp":1.0},
-    "DMART":      {"token":"14413", "sec":"CONSUMER","slp":0.85},
-    "TRENT":      {"token":"3721",  "sec":"CONSUMER","slp":0.90},
-    "ZOMATO":     {"token":"5097",  "sec":"CONSUMER","slp":1.2},
-    "NYKAA":      {"token":"21431", "sec":"CONSUMER","slp":1.2},
-    "IRCTC":      {"token":"13611", "sec":"CONSUMER","slp":1.0},
-    "ULTRACEMCO": {"token":"11532", "sec":"CEMENT","slp":0.85},
-    "GRASIM":     {"token":"1232",  "sec":"CEMENT","slp":0.90},
-    "AMBUJACEM":  {"token":"1270",  "sec":"CEMENT","slp":1.0},
-    "SHREECEM":   {"token":"3103",  "sec":"CEMENT","slp":0.85},
-    "BHARTIARTL": {"token":"10604", "sec":"TELECOM","slp":0.85},
-    "INDUSTOWER": {"token":"17491", "sec":"TELECOM","slp":1.0},
+    "RELIANCE":   {"token":"2885",  "sec":"ENERGY",  "atr_min":20},
+    "HDFCBANK":   {"token":"1333",  "sec":"BANKING", "atr_min":15},
+    "ICICIBANK":  {"token":"4963",  "sec":"BANKING", "atr_min":15},
+    "INFY":       {"token":"1594",  "sec":"IT",      "atr_min":20},
+    "TCS":        {"token":"11536", "sec":"IT",      "atr_min":30},
+    "AXISBANK":   {"token":"5900",  "sec":"BANKING", "atr_min":15},
+    "SBIN":       {"token":"3045",  "sec":"BANKING", "atr_min":10},
+    "BAJFINANCE": {"token":"317",   "sec":"FINANCE", "atr_min":30},
+    "KOTAKBANK":  {"token":"1922",  "sec":"BANKING", "atr_min":20},
+    "LT":         {"token":"11483", "sec":"INFRA",   "atr_min":40},
+    "TATASTEEL":  {"token":"3499",  "sec":"METAL",   "atr_min":10},
+    "JSWSTEEL":   {"token":"11723", "sec":"METAL",   "atr_min":15},
+    "MARUTI":     {"token":"10999", "sec":"AUTO",    "atr_min":80},
+    "MM":         {"token":"2031",  "sec":"AUTO",    "atr_min":30},
+    "BHARTIARTL": {"token":"10604", "sec":"TELECOM", "atr_min":10},
+    "DLF":        {"token":"14732", "sec":"REALTY",  "atr_min":10},
+    "ADANIPORTS": {"token":"15083", "sec":"INFRA",   "atr_min":15},
+    "SUNPHARMA":  {"token":"3351",  "sec":"PHARMA",  "atr_min":15},
+    "TITAN":      {"token":"3506",  "sec":"CONSUMER","atr_min":30},
+    "WIPRO":      {"token":"3787",  "sec":"IT",      "atr_min":10},
 }
 
 INDICES = {"NIFTY50":"26000","FINNIFTY":"26037"}
 
-SECTOR_STOCKS = {
-    "BANKING":  ["HDFCBANK","ICICIBANK","SBIN","AXISBANK","KOTAKBANK","INDUSINDBK"],
-    "FINANCE":  ["BAJFINANCE","BAJAJFINSV","CHOLAFIN","PFC","RECLTD","MUTHOOTFIN"],
-    "IT":       ["INFY","TCS","WIPRO","HCLTECH","TECHM","LTIM"],
-    "AUTO":     ["MARUTI","MM","TATAMOTORS","BAJAJ-AUTO","HEROMOTOCO"],
-    "PHARMA":   ["SUNPHARMA","DRREDDY","CIPLA","DIVISLAB","AUROPHARMA"],
-    "METAL":    ["TATASTEEL","JSWSTEEL","HINDALCO","COALINDIA","VEDL"],
-    "FMCG":     ["HINDUNILVR","ITC","BRITANNIA","NESTLEIND","DABUR"],
-    "ENERGY":   ["RELIANCE","ONGC","BPCL","NTPC","POWERGRID"],
-    "REALTY":   ["DLF","GODREJPROP","OBEROIRLTY"],
-    "INFRA":    ["LT","ADANIPORTS","BEL","HAL","BHEL"],
-    "CONSUMER": ["TITAN","ASIANPAINT","DMART","TRENT","ZOMATO"],
-    "CEMENT":   ["ULTRACEMCO","GRASIM","AMBUJACEM"],
-    "TELECOM":  ["BHARTIARTL","INDUSTOWER"],
-}
-
-# ── TIME PHASE DETECTION ─────────────────────────────────────────────
+# ── PHASE DETECTION ───────────────────────────────────────────────────
 def get_phase(ist):
-    h,m = ist.hour, ist.minute
-    if h<9 or (h==8 and m>=45):
-        if h==8 and m>=45: return "PREMARKET_845"
-    if h==9 and m<15: return "PREMARKET_900"
-    if h==9 and m<30: return "MARKET_OPEN_915"
-    if h==9 and m<45: return "ORB_930"
-    if h>=9 and h<15: return "ORB_945_PLUS"
+    h,m=ist.hour,ist.minute
+    if h==8 and m>=45: return "PREMARKET_845"
+    if h==9 and m<15:  return "PREMARKET_900"
+    if h==9 and m<30:  return "MARKET_OPEN_915"
+    if h==9 and m<45:  return "ORB_930"
+    if 9<=h<15:        return "ORB_945_PLUS"
     return "CLOSED"
 
-def get_phase_label(phase):
-    labels = {
+def get_phase_label(p):
+    return {
         "PREMARKET_845":  "8:45 AM — Pre-Market Brief",
         "PREMARKET_900":  "9:00 AM — Pre-Open Analysis",
         "MARKET_OPEN_915":"9:15 AM — Market Open Watch",
         "ORB_930":        "9:30 AM — ORB Confirmation",
         "ORB_945_PLUS":   "9:45 AM — FINNIFTY ORB Signal",
         "CLOSED":         "Market Closed — EOD Data",
-    }
-    return labels.get(phase,"—")
+    }.get(p,"—")
 
-# ── GIFT NIFTY / SGX DATA ────────────────────────────────────────────
+# ── GIFT NIFTY ────────────────────────────────────────────────────────
 def fetch_gift_nifty():
-    """Fetch Gift Nifty / SGX Nifty from multiple sources"""
-    gift = {"ltp":0,"chg":0,"gap":0,"gap_pct":0,"bias":"—","source":"—"}
-    hdrs = {
-        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept":"application/json, text/plain, */*",
-        "Accept-Language":"en-US,en;q=0.9",
-        "Referer":"https://www.google.com",
-    }
-    sources = [
-        ("https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEI?interval=1d&range=1d","yahoo1"),
-        ("https://query2.finance.yahoo.com/v8/finance/chart/%5ENSEI?interval=1d&range=1d","yahoo2"),
-        ("https://query1.finance.yahoo.com/v8/finance/chart/NIFTYBEES.NS?interval=1d&range=1d","niftybees"),
-        ("https://query2.finance.yahoo.com/v8/finance/chart/%5ECNXNIFTY?interval=1d&range=1d","cnx"),
-    ]
-    try:
-        for url, src in sources:
-            try:
-                r = requests.get(url, headers=hdrs, timeout=10)
-                if r.status_code == 200:
-                    d = r.json()
-                    result = d.get("chart",{}).get("result",[])
-                    if result:
-                        meta = result[0].get("meta",{})
-                        p = float(meta.get("regularMarketPrice",0) or 0)
-                        prev = float(meta.get("previousClose",0) or meta.get("chartPreviousClose",0) or 0)
-                        if p > 0:
-                            chg = round((p-prev)/prev*100,2) if prev>0 else 0
-                            gift["ltp"] = round(p,2)
-                            gift["chg"] = chg
-                            gift["source"] = src
-                            print(f"Gift Nifty OK: {p} {chg}% from {src}")
-                            break
-            except Exception as e:
-                print(f"Gift Nifty {src} error: {e}")
-                continue
-
-        if gift["ltp"] > 0:
-            gift["gap"] = round(gift["chg"] * gift["ltp"] / 100, 0)
-            gift["gap_pct"] = gift["chg"]
-            if gift["chg"] > 0.5:    gift["bias"] = "GAP UP ▲ BULLISH"
-            elif gift["chg"] > 0.2:  gift["bias"] = "SLIGHT GAP UP"
-            elif gift["chg"] < -0.5: gift["bias"] = "GAP DOWN ▼ BEARISH"
-            elif gift["chg"] < -0.2: gift["bias"] = "SLIGHT GAP DOWN"
-            else:                     gift["bias"] = "FLAT — WAIT"
-        else:
-            print("Gift Nifty: All sources failed")
-    except Exception as e:
-        print(f"Gift Nifty fetch error: {e}")
-    return gift
-
-def fetch_vix():
-    """Fetch India VIX from multiple sources"""
-    vix={"ltp":0,"chg":0,"prev":0,"status":"—","source":"—"}
-    hdrs_common={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                 "Accept":"application/json, text/plain, */*",
-                 "Accept-Language":"en-US,en;q=0.9"}
-    try:
-        # Method 1: Yahoo Finance ^INDIAVIX
-        try:
-            s=requests.Session()
-            s.headers.update(hdrs_common)
-            # Get cookies first
-            s.get("https://finance.yahoo.com",timeout=6)
-            r=s.get("https://query1.finance.yahoo.com/v8/finance/chart/%5EINDIAVIX?interval=1d&range=2d",
-                    timeout=8)
-            if r.ok:
-                d=r.json()
-                result=d.get("chart",{}).get("result",[])
-                if result:
-                    meta=result[0].get("meta",{})
-                    ltp=float(meta.get("regularMarketPrice",0))
-                    prev=float(meta.get("previousClose",0))
-                    if ltp>0:
-                        vix["ltp"]=round(ltp,2)
-                        vix["prev"]=round(prev,2)
-                        vix["chg"]=round(ltp-prev,2) if prev>0 else 0
-                        vix["source"]="Yahoo Finance"
-                        vix["status"]="<13 Safe" if ltp<13 else "13-16 Caution" if ltp<16 else ">16 HIGH RISK"
-                        print(f"VIX from Yahoo: {ltp}")
-                        return vix
-        except Exception as e:
-            print(f"VIX Yahoo error: {e}")
-
-        # Method 2: NSE India with session
-        try:
-            s=requests.Session()
-            s.headers.update({**hdrs_common,"Referer":"https://www.nseindia.com/"})
-            # Get session cookies
-            s.get("https://www.nseindia.com",timeout=8)
-            time.sleep(1)
-            r=s.get("https://www.nseindia.com/api/allIndices",timeout=8)
-            if r.ok:
-                data=r.json()
-                for idx in data.get("data",[]):
-                    name=str(idx.get("indexSymbol","") or idx.get("index",""))
-                    if "VIX" in name.upper():
-                        ltp=float(idx.get("last",0) or idx.get("indexValue",0) or 0)
-                        prev=float(idx.get("previousClose",0) or idx.get("yearHigh",0) or 0)
-                        if ltp>0:
-                            vix["ltp"]=round(ltp,2)
-                            vix["prev"]=round(prev,2)
-                            vix["chg"]=round(float(idx.get("change",0)),2)
-                            vix["source"]="NSE India"
-                            vix["status"]="<13 Safe" if ltp<13 else "13-16 Caution" if ltp<16 else ">16 HIGH RISK"
-                            print(f"VIX from NSE: {ltp}")
-                            return vix
-        except Exception as e:
-            print(f"VIX NSE error: {e}")
-
-        # Method 3: Try alternate Yahoo endpoint
+    gift={"ltp":0,"chg":0,"bias":"—","source":"—"}
+    hdrs={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept":"application/json"}
+    for sym in ["^NSEI","^CNXNIFTY","NIFTYBEES.NS"]:
         try:
             r=requests.get(
-                "https://query2.finance.yahoo.com/v10/finance/quoteSummary/%5EINDIAVIX?modules=price",
-                headers=hdrs_common,timeout=8)
+                f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1d&range=1d",
+                headers=hdrs,timeout=10)
             if r.ok:
-                d=r.json()
-                price=d.get("quoteSummary",{}).get("result",[{}])[0].get("price",{})
-                ltp=float(price.get("regularMarketPrice",{}).get("raw",0))
-                prev=float(price.get("regularMarketPreviousClose",{}).get("raw",0))
-                if ltp>0:
-                    vix["ltp"]=round(ltp,2)
-                    vix["prev"]=round(prev,2)
-                    vix["chg"]=round(ltp-prev,2) if prev>0 else 0
-                    vix["source"]="Yahoo v10"
-                    vix["status"]="<13 Safe" if ltp<13 else "13-16 Caution" if ltp<16 else ">16 HIGH RISK"
-                    print(f"VIX from Yahoo v10: {ltp}")
+                result=r.json().get("chart",{}).get("result",[])
+                if result:
+                    meta=result[0].get("meta",{})
+                    p=float(meta.get("regularMarketPrice",0))
+                    prev=float(meta.get("previousClose",0) or meta.get("chartPreviousClose",0))
+                    if p>0 and prev>0:
+                        chg=round((p-prev)/prev*100,2)
+                        gift={"ltp":round(p,2),"chg":chg,
+                              "bias":"GAP UP ▲ BULLISH" if chg>0.5 else
+                                     "SLIGHT GAP UP" if chg>0.2 else
+                                     "GAP DOWN ▼ BEARISH" if chg<-0.5 else
+                                     "SLIGHT GAP DOWN" if chg<-0.2 else
+                                     "FLAT — WAIT",
+                              "source":sym}
+                        print(f"Gift Nifty: {p} {chg}% — {gift['bias']}")
+                        return gift
+        except: continue
+    print("Gift Nifty: All sources failed")
+    return gift
+
+# ── VIX ───────────────────────────────────────────────────────────────
+def fetch_vix():
+    vix={"ltp":0,"chg":0,"prev":0,"status":"—","source":"—"}
+    hdrs={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept":"application/json"}
+    # Method 1: Yahoo Finance
+    try:
+        s=requests.Session()
+        s.headers.update(hdrs)
+        s.get("https://finance.yahoo.com",timeout=6)
+        r=s.get("https://query1.finance.yahoo.com/v8/finance/chart/%5EINDIAVIX?interval=1d&range=2d",
+                timeout=8)
+        if r.ok:
+            result=r.json().get("chart",{}).get("result",[])
+            if result:
+                meta=result[0].get("meta",{})
+                p=float(meta.get("regularMarketPrice",0))
+                prev=float(meta.get("previousClose",0))
+                if p>0:
+                    vix={"ltp":round(p,2),"prev":round(prev,2),
+                         "chg":round(p-prev,2),
+                         "status":"<13 SAFE" if p<13 else "13-16 CAUTION" if p<16 else ">16 HIGH RISK",
+                         "source":"Yahoo"}
+                    print(f"VIX: {p} — {vix['status']}")
                     return vix
-        except Exception as e:
-            print(f"VIX Yahoo v10 error: {e}")
-
-    except Exception as e:
-        print(f"VIX fetch error: {e}")
-
-    print("VIX: All sources failed — showing N/A")
+    except: pass
+    # Method 2: Yahoo v2
+    try:
+        r=requests.get(
+            "https://query2.finance.yahoo.com/v8/finance/chart/%5EINDIAVIX?interval=1d&range=2d",
+            headers=hdrs,timeout=8)
+        if r.ok:
+            result=r.json().get("chart",{}).get("result",[])
+            if result:
+                meta=result[0].get("meta",{})
+                p=float(meta.get("regularMarketPrice",0))
+                if p>0:
+                    vix["ltp"]=round(p,2)
+                    vix["status"]="<13 SAFE" if p<13 else "13-16 CAUTION" if p<16 else ">16 HIGH RISK"
+                    vix["source"]="Yahoo v2"
+                    print(f"VIX v2: {p}")
+                    return vix
+    except: pass
+    print("VIX: All sources failed")
     return vix
 
 # ── API HELPERS ───────────────────────────────────────────────────────
@@ -316,7 +172,7 @@ def login():
         return d["data"]["jwtToken"]
     raise Exception(f"Login failed: {d.get('message')}")
 
-def get_quotes(tok, tokens):
+def get_quotes(tok,tokens):
     all_data=[]
     for i in range(0,len(tokens),50):
         batch=tokens[i:i+50]
@@ -332,11 +188,11 @@ def get_quotes(tok, tokens):
         time.sleep(0.3)
     return all_data
 
-def get_candles(tok, sym_tok, interval, fr, to):
+def get_candles(tok,sym_tok,interval,fr,to):
     try:
         r=requests.post(f"{BASE}/rest/secure/angelbroking/historical/v1/getCandleData",
-            json={"exchange":"NSE","symboltoken":sym_tok,"interval":interval,
-                  "fromdate":fr,"todate":to},
+            json={"exchange":"NSE","symboltoken":sym_tok,
+                  "interval":interval,"fromdate":fr,"todate":to},
             headers=hdrs(tok),timeout=15)
         return r.json()
     except:
@@ -361,6 +217,20 @@ def rsi(prices,n=14):
         ag=(ag*(n-1)+g[i])/n; al=(al*(n-1)+l[i])/n
     return 100 if al==0 else round(100-100/(1+ag/al))
 
+def atr_calc(candles,n=14):
+    """Calculate 14-day ATR"""
+    if len(candles)<2: return 0
+    trs=[]
+    for i in range(1,len(candles)):
+        h=float(candles[i][2]); l=float(candles[i][3]); pc=float(candles[i-1][4])
+        tr=max(h-l,abs(h-pc),abs(l-pc))
+        trs.append(tr)
+    if not trs: return 0
+    atr=sum(trs[:n])/min(n,len(trs))
+    for tr in trs[n:]:
+        atr=(atr*(n-1)+tr)/n
+    return round(atr,2)
+
 def macd_bull(prices):
     if len(prices)<26: return True
     k12,k26=2/13,2/27; e12=e26=prices[0]
@@ -380,7 +250,7 @@ def vol_ratio(vols):
 
 def calc_vwap(candles):
     if not candles: return 0
-    cum_tpv=0; cum_vol=0
+    cum_tpv=cum_vol=0
     for c in candles[-20:]:
         tp=(float(c[2])+float(c[3])+float(c[4]))/3
         vol=float(c[5])
@@ -391,15 +261,13 @@ def calc_vwap(candles):
 def update_excel(signals,ist):
     fname="trading_journal.xlsx"
     try:
-        wb=openpyxl.load_workbook(fname)
-        ws=wb.active
+        wb=openpyxl.load_workbook(fname); ws=wb.active
     except:
-        wb=openpyxl.Workbook(); ws=wb.active
-        ws.title="SUBHA CAPITAL"
-        headers=["Date","Stock","Sector","Side","Score","Pre-Mkt Price",
-                 "Open","High","Low","VWAP","GTT Trigger","Limit Price",
-                 "Stop Loss","Target 1","Target 2","Qty","Max Risk ₹",
-                 "Bias","Phase","Result","P&L ₹","Notes"]
+        wb=openpyxl.Workbook(); ws=wb.active; ws.title="SUBHA CAPITAL"
+        headers=["Date","Stock","Sector","Side","Score","ATR","First Candle%",
+                 "Pre-Mkt Price","ORB High","ORB Low","ORB Range",
+                 "Entry","SL","T1","T2","Qty","Max Risk ₹","Potential ₹",
+                 "Bias","VIX","Result","P&L ₹","Notes"]
         hf=PatternFill(start_color="0D1221",end_color="0D1221",fill_type="solid")
         hfont=Font(bold=True,color="F0A500",size=10)
         for col,h in enumerate(headers,1):
@@ -407,19 +275,19 @@ def update_excel(signals,ist):
             cell.fill=hf; cell.font=hfont
             cell.alignment=Alignment(horizontal='center',vertical='center')
         ws.row_dimensions[1].height=28
-        widths=[12,12,10,8,8,14,10,10,10,10,12,12,12,10,10,6,10,10,10,10,10,15]
+        widths=[12,12,10,8,7,8,12,14,10,10,10,10,10,10,10,6,10,12,10,8,10,10,20]
         for i,w in enumerate(widths,1):
             ws.column_dimensions[get_column_letter(i)].width=w
 
     date_str=ist.strftime("%d-%b-%Y")
     for s in signals:
         isL=s["side"]=="LONG"
-        risk=abs(s["entry"]-s["sl"])
         row=[date_str,s["sym"],s["sec"],s["side"],f"{s['score']}/6",
-             s["ltp"],s.get("open",""),s.get("high",""),s.get("low",""),s.get("vwap",""),
-             s.get("gtt_trigger",s["entry"]),s.get("gtt_limit",s["entry"]),
-             s["sl"],s["t1"],s["t2"],s["qty"],round(risk*s["qty"],2),
-             s.get("bias",""),s.get("phase",""),"","",""]
+             s.get("atr",0),f"{s.get('first_candle_pct',0):.2f}%",
+             s["ltp"],s.get("orb_high",0),s.get("orb_low",0),s.get("orb_range",0),
+             s["entry"],s["sl"],s["t1"],s["t2"],s["qty"],
+             s.get("max_risk",0),s.get("potential_profit",0),
+             s.get("bias",""),s.get("vix",0),"","",""]
         rn=ws.max_row+1
         fc="002D1C" if isL else "2D0010"
         rf=PatternFill(start_color=fc,end_color=fc,fill_type="solid")
@@ -427,7 +295,7 @@ def update_excel(signals,ist):
             cell=ws.cell(row=rn,column=col,value=val)
             cell.fill=rf; cell.alignment=Alignment(horizontal='center')
             if col==4: cell.font=Font(color="00D4A0" if isL else "FF4560",bold=True)
-            elif col in [11,12]: cell.font=Font(color="F0A500",bold=True)
+            elif col in [12]: cell.font=Font(color="F0A500",bold=True)
             elif col==13: cell.font=Font(color="FF4560",bold=True)
             elif col in [14,15]: cell.font=Font(color="00D4A0",bold=True)
     wb.save(fname)
@@ -438,29 +306,27 @@ def main():
     ist=datetime.now(IST)
     phase=get_phase(ist)
     phase_label=get_phase_label(phase)
-    print(f"═══ SUBHA CAPITAL v7 — {ist.strftime('%d %b %Y %H:%M IST')} ═══")
+    print(f"{'='*60}")
+    print(f"SUBHA CAPITAL V10 — {ist.strftime('%d %b %Y %H:%M IST')}")
     print(f"Phase: {phase} — {phase_label}")
+    print(f"Universe: Top 20 F&O stocks")
+    print(f"{'='*60}")
 
     mkt_open=(ist.hour>9 or (ist.hour==9 and ist.minute>=15)) and \
              (ist.hour<15 or (ist.hour==15 and ist.minute<30))
 
-    # ── GIFT NIFTY (8:45 AM phase) ───────────────────────────────────
-    print("Fetching Gift Nifty...")
-    gift = fetch_gift_nifty()
-    print(f"Gift Nifty: {gift['ltp']} {gift['chg']}% — {gift['bias']}")
+    # ── GIFT NIFTY + VIX ─────────────────────────────────────────────
+    print("\nFetching Gift Nifty...")
+    gift=fetch_gift_nifty()
+    print("\nFetching India VIX...")
+    vix_data=fetch_vix()
 
-    print("Fetching India VIX...")
-    vix_data = fetch_vix()
-    print(f"VIX: {vix_data['ltp']} | Status: {vix_data['status']} | Source: {vix_data['source']}")
-
-    # ── ANGEL ONE LOGIN ───────────────────────────────────────────────
+    # ── LOGIN ─────────────────────────────────────────────────────────
     jwt=login()
 
-    # ── FETCH ALL QUOTES ──────────────────────────────────────────────
-    stk_toks=[v["token"] for v in STOCKS.values()]
-    idx_toks=list(INDICES.values())
-    fetched=get_quotes(jwt,stk_toks+idx_toks)
-
+    # ── QUOTES ───────────────────────────────────────────────────────
+    all_toks=[v["token"] for v in STOCKS.values()]+list(INDICES.values())
+    fetched=get_quotes(jwt,all_toks)
     Q={}
     for q in fetched:
         t=q.get("symbolToken","")
@@ -468,7 +334,7 @@ def main():
             if info["token"]==t: Q[sym]=q; break
         for idx,tok in INDICES.items():
             if tok==t: Q[idx]=q; break
-    print(f"Quotes: {len(Q)}")
+    print(f"Quotes: {len(Q)}/{len(STOCKS)+len(INDICES)}")
 
     # ── PRICE FUNCTIONS ───────────────────────────────────────────────
     def F(s,field,default=0):
@@ -494,311 +360,293 @@ def main():
         if nc!=0: return round(nc,2)
         return round(ltp(s)-prev_close(s),2)
 
-    def get_today_ohlc(sym, tok):
-        """Fetch today's intraday OHLC from Angel One"""
-        try:
-            ist_now = datetime.now(IST)
-            today = ist_now.strftime("%Y-%m-%d")
-            cd = get_candles(tok, STOCKS[sym]["token"], "ONE_MINUTE",
-                           f"{today} 09:15", f"{today} 15:30")
-            if cd.get("status") and cd.get("data"):
-                data = cd["data"]
-                if data:
-                    o = float(data[0][1])   # First candle open
-                    h = max(float(x[2]) for x in data)  # Day high
-                    l = min(float(x[3]) for x in data)  # Day low
-                    c = float(data[-1][4])  # Last candle close
-                    return {"open":round(o,2),"high":round(h,2),"low":round(l,2),"close":round(c,2)}
-        except: pass
-        return None
-
-    def day_high(s):
-        # Try quote first (works during market hours)
+    def day_high(s,c=[]):
         v=round(F(s,"high"),2)
         if v>0: return v
-        # Fallback: use last daily candle high
-        c=candles.get(s,[])
         return round(float(c[-1][2]),2) if c else ltp(s)
 
-    def day_low(s):
+    def day_low(s,c=[]):
         v=round(F(s,"low"),2)
         if v>0: return v
-        c=candles.get(s,[])
         return round(float(c[-1][3]),2) if c else ltp(s)
 
-    def day_open(s):
+    def day_open(s,c=[]):
         v=round(F(s,"open"),2)
         if v>0: return v
-        c=candles.get(s,[])
         return round(float(c[-1][1]),2) if c else ltp(s)
 
     # ── INDEX DATA ────────────────────────────────────────────────────
-    nifty_ltp  = ltp("NIFTY50")
-    nifty_chg  = pct_chg("NIFTY50")
-    nifty_pts  = pts_chg("NIFTY50")
-    nifty_prev = prev_close("NIFTY50")
-    fn_ltp     = ltp("FINNIFTY")
-    fn_chg     = pct_chg("FINNIFTY")
-    fn_pts     = pts_chg("FINNIFTY")
-    fn_prev    = prev_close("FINNIFTY")
+    nifty_ltp   = ltp("NIFTY50")
+    nifty_chg   = pct_chg("NIFTY50")
+    nifty_pts   = pts_chg("NIFTY50")
+    nifty_prev  = prev_close("NIFTY50")
+    fn_ltp      = ltp("FINNIFTY")
+    fn_chg      = pct_chg("FINNIFTY")
+    fn_pts      = pts_chg("FINNIFTY")
+    fn_prev     = prev_close("FINNIFTY")
+    print(f"Nifty: {nifty_ltp} | {nifty_chg}% | {nifty_pts}pts")
+    print(f"FINNIFTY: {fn_ltp} | {fn_chg}% | {fn_pts}pts")
 
-    print(f"Nifty: {nifty_ltp} | chg: {nifty_chg}% | pts: {nifty_pts}")
-    print(f"FINNIFTY: {fn_ltp} | chg: {fn_chg}% | pts: {fn_pts}")
-
-    # Bias
     bias="BULLISH" if nifty_chg>0.3 else "BEARISH" if nifty_chg<-0.3 else "NEUTRAL"
 
-    # ── PRE-MARKET ANALYSIS (9:00 AM phase) ──────────────────────────
-    # Top gainers and losers from Nifty 100
-    pre_market = []
-    for sym in list(STOCKS.keys())[:20]:  # Check top 20 stocks
-        p=ltp(sym); c=pct_chg(sym)
-        if p>0:
-            pre_market.append({"sym":sym,"ltp":p,"chg":c,"sec":STOCKS[sym]["sec"]})
-    pre_market.sort(key=lambda x:x["chg"],reverse=True)
-    top_gainers=pre_market[:3]
-    top_losers=pre_market[-3:][::-1]
-
-    # ── FINNIFTY ATM + ORB ────────────────────────────────────────────
+    # ── FINNIFTY ORB ──────────────────────────────────────────────────
     fn_atm=round(fn_ltp/50)*50 if fn_ltp>0 else 0
-    fn_orb={"open":0,"high":0,"low":0,"close":0,"signal":"WAIT",
-            "ce_prem":0,"pe_prem":0}
+    fn_orb={"open":0,"high":0,"low":0,"close":0,"signal":"WAIT","ce_prem":0,"pe_prem":0}
 
-    # Fetch ORB after 9:45 AM OR when market closed (EOD data still available)
-    if phase in ["ORB_945_PLUS","CLOSED","MARKET_OPEN_915","ORB_930"]:
+    if phase in ["ORB_945_PLUS","CLOSED","ORB_930","MARKET_OPEN_915"]:
         try:
             fn_date=ist.strftime("%Y-%m-%d")
-            # Try broader time window to ensure we get the candle
-            fr_time=f"{fn_date} 09:00"
-            to_time=f"{fn_date} 15:30"
-
             for interval,label in [("THIRTY_MINUTE","30min"),("FIFTEEN_MINUTE","15min"),("ONE_MINUTE","1min")]:
                 try:
-                    cd=get_candles(jwt,"26037",interval,fr_time,to_time)
-                    candle_list=cd.get("data",[]) if cd.get("status") else []
-                    print(f"FINNIFTY {label}: {len(candle_list)} candles")
-
-                    if candle_list:
+                    cd=get_candles(jwt,"26037",interval,f"{fn_date} 09:00",f"{fn_date} 15:30")
+                    cl=cd.get("data",[]) if cd.get("status") else []
+                    print(f"FINNIFTY {label}: {len(cl)} candles")
+                    if cl:
                         if interval=="THIRTY_MINUTE":
-                            # First 30-min candle = 9:15-9:45 ORB
-                            c=candle_list[0]
-                            fn_orb["open"] =round(float(c[1]),2)
-                            fn_orb["high"] =round(float(c[2]),2)
-                            fn_orb["low"]  =round(float(c[3]),2)
-                            fn_orb["close"]=round(float(c[4]),2)
-
+                            c=cl[0]
+                            fn_orb["open"]=round(float(c[1]),2); fn_orb["high"]=round(float(c[2]),2)
+                            fn_orb["low"]=round(float(c[3]),2);  fn_orb["close"]=round(float(c[4]),2)
                         elif interval=="FIFTEEN_MINUTE":
-                            # Combine first 2 × 15-min candles = 30-min ORB
-                            c2=candle_list[:2]
-                            if len(c2)>=1:
-                                fn_orb["open"] =round(float(c2[0][1]),2)
-                                fn_orb["high"] =round(max(float(x[2]) for x in c2),2)
-                                fn_orb["low"]  =round(min(float(x[3]) for x in c2),2)
-                                fn_orb["close"]=round(float(c2[-1][4]),2)
-
+                            c2=cl[:2]
+                            fn_orb["open"]=round(float(c2[0][1]),2)
+                            fn_orb["high"]=round(max(float(x[2]) for x in c2),2)
+                            fn_orb["low"]=round(min(float(x[3]) for x in c2),2)
+                            fn_orb["close"]=round(float(c2[-1][4]),2)
                         elif interval=="ONE_MINUTE":
-                            # Build 30-min ORB from first 30 × 1-min candles
-                            c30=candle_list[:30]
-                            if c30:
-                                fn_orb["open"] =round(float(c30[0][1]),2)
-                                fn_orb["high"] =round(max(float(x[2]) for x in c30),2)
-                                fn_orb["low"]  =round(min(float(x[3]) for x in c30),2)
-                                fn_orb["close"]=round(float(c30[-1][4]),2)
-
-                        # Set signal if we got valid data
-                        if fn_orb["high"]>0 and fn_orb["low"]>0:
-                            if fn_ltp>0:
-                                if fn_ltp>fn_orb["high"]:   fn_orb["signal"]="CE"
-                                elif fn_ltp<fn_orb["low"]:  fn_orb["signal"]="PE"
-                                else:                        fn_orb["signal"]="MONITOR"
-                            else:
-                                fn_orb["signal"]="MONITOR"
-                            print(f"ORB OK: O={fn_orb['open']} H={fn_orb['high']} L={fn_orb['low']} C={fn_orb['close']} Sig={fn_orb['signal']}")
-                            break  # Got data, stop trying
-                        else:
-                            print(f"FINNIFTY {label}: candles exist but OHLC = 0, trying next interval")
+                            c30=cl[:30]
+                            fn_orb["open"]=round(float(c30[0][1]),2)
+                            fn_orb["high"]=round(max(float(x[2]) for x in c30),2)
+                            fn_orb["low"]=round(min(float(x[3]) for x in c30),2)
+                            fn_orb["close"]=round(float(c30[-1][4]),2)
+                        if fn_orb["high"]>0:
+                            if fn_ltp>fn_orb["high"]: fn_orb["signal"]="CE"
+                            elif fn_ltp<fn_orb["low"]: fn_orb["signal"]="PE"
+                            else: fn_orb["signal"]="MONITOR"
+                            print(f"ORB OK: H={fn_orb['high']} L={fn_orb['low']} Sig={fn_orb['signal']}")
+                            break
                 except Exception as e:
                     print(f"FINNIFTY {label} error: {e}")
-                    continue
-
-            if fn_orb["high"]==0:
-                print("FINNIFTY ORB: All intervals returned empty — market may be closed or pre-market")
-
         except Exception as e:
-            print(f"FINNIFTY ORB fetch error: {e}")
+            print(f"FINNIFTY ORB error: {e}")
 
     if fn_ltp>0:
-        import math as _m
-        days=max(1,3)
-        fn_orb["ce_prem"]=round(fn_ltp*0.006*_m.sqrt(days/5),0)
-        fn_orb["pe_prem"]=round(fn_orb["ce_prem"]*0.92,0)
+        fn_orb["ce_prem"]=round(fn_ltp*0.005,0)
+        fn_orb["pe_prem"]=round(fn_ltp*0.0046,0)
 
-    # ── SECTORS ───────────────────────────────────────────────────────
-    sectors=[]
-    for sec,stks in SECTOR_STOCKS.items():
-        valid=[s for s in stks if ltp(s)>0]
-        if not valid:
-            valid=stks[:1]
-        chgs=[pct_chg(s) for s in valid]
-        # Weighted avg: use abs(chg) weighted
-        sec_chg=round(sum(chgs)/len(chgs),2) if chgs else 0.0
-        # Leader = stock with highest absolute % change
-        ldr=max(valid, key=lambda s:abs(pct_chg(s))) if valid else stks[0]
-        ldr_ltp=ltp(ldr); ldr_chg=pct_chg(ldr); ldr_pts=pts_chg(ldr)
-        sectors.append({
-            "name":sec,"chg":sec_chg,"leader":ldr,
-            "leader_price":ldr_ltp,"leader_chg":ldr_chg,
-            "leader_pts":ldr_pts,"idx_price":0,
-            "stocks":[{"sym":s,"ltp":ltp(s),"chg":pct_chg(s)} for s in valid]
-        })
-        print(f"  Sector {sec}: {sec_chg}% | Leader: {ldr} {ldr_chg}%")
-    sectors.sort(key=lambda x:x["chg"],reverse=True)
-    print(f"Top: {sectors[0]['name']} {sectors[0]['chg']}% | Bot: {sectors[-1]['name']} {sectors[-1]['chg']}%")
-
-    # ── CANDLES + ROCKERS (9:30 AM phase onwards) ─────────────────────
-    longs=[]; shorts=[]
+    # ── CANDLES ───────────────────────────────────────────────────────
+    to_d=ist.strftime("%Y-%m-%d %H:%M")
+    fr_d=(ist-timedelta(days=30)).strftime("%Y-%m-%d %H:%M")
     candles={}
+    print(f"\nFetching candles for {len(STOCKS)} stocks...")
+    for i,(sym,info) in enumerate(STOCKS.items()):
+        try:
+            cd=get_candles(jwt,info["token"],"ONE_DAY",fr_d,to_d)
+            if cd.get("status") and cd.get("data"):
+                candles[sym]=cd["data"]
+            time.sleep(0.2)
+        except: pass
+        if (i+1)%10==0: print(f"  Candles: {i+1}/{len(STOCKS)}")
+    print(f"Candles: {len(candles)}/{len(STOCKS)}")
 
-    if phase in ["ORB_930","ORB_945_PLUS","CLOSED","PREMARKET_900","PREMARKET_845"]:
-        to_d=ist.strftime("%Y-%m-%d %H:%M")
-        fr_d=(ist-timedelta(days=60)).strftime("%Y-%m-%d %H:%M")
-        print(f"Fetching candles...")
-        for i,(sym,info) in enumerate(STOCKS.items()):
-            try:
-                cd=get_candles(jwt,info["token"],"ONE_DAY",fr_d,to_d)
-                if cd.get("status") and cd.get("data"):
-                    candles[sym]=cd["data"]
-                time.sleep(0.2)
-                if (i+1)%25==0: print(f"  Candles: {i+1}/{len(STOCKS)}")
-            except: pass
-        print(f"Candles: {len(candles)}")
+    # ── ROCKERS SCAN — TOP 20 WITH SMART FILTERS ─────────────────────
+    risk_amt=CAPITAL*RISK_PCT/100
+    candidates=[]
+    skipped=[]
 
-        # ROCKERS scan
-        top4=[s["name"] for s in sectors[:4]]
-        bot4=[s["name"] for s in sectors[-4:]]
-        risk_amt=CAPITAL*RISK_PCT/100
+    for sym,info in STOCKS.items():
+        p=ltp(sym)
+        if p<=0: continue
 
-        for sym,info in STOCKS.items():
-            p=ltp(sym)
-            if p<=0: continue
-            c=candles.get(sym,[])
-            closes=[float(x[4]) for x in c] if c else [p]
-            vols=[float(x[5]) for x in c] if c else [1]
+        c=candles.get(sym,[])
+        closes=[float(x[4]) for x in c] if c else [p]
+        vols=[float(x[5]) for x in c] if c else [1]
 
-            # Use quote OHLC if available (market hours)
-            # Else use last daily candle OHLC
-            h=day_high(sym); l=day_low(sym); op=day_open(sym)
+        h=day_high(sym,c); l=day_low(sym,c); op=day_open(sym,c)
+        if h<=0: h=p
+        if l<=0: l=p
+        if op<=0: op=p
 
-            # If high/low still = ltp (fallback), use last candle
-            if h==p and c:
-                h=round(float(c[-1][2]),2)
-                l=round(float(c[-1][3]),2)
-                op=round(float(c[-1][1]),2)
-                print(f"  {sym}: Using candle OHLC H={h} L={l} O={op}")
-            vwap_val=calc_vwap(c)
-            e20=ema(closes,20); r=rsi(closes); vr=vol_ratio(vols)
-            macd_b=macd_bull(closes); st_b=st_bull(c)
+        # ATR calculation
+        atr=atr_calc(c) if len(c)>14 else 0
 
-            if info["sec"] in top4:
-                vwap_ok=p>vwap_val if vwap_val>0 else p>e20
-                conds={"EMA20":p>e20,"SUPERT":st_b,"RSI":50<=r<=70,
-                       "MACD":macd_b,"VOL":vr>=1.5,"VWAP":vwap_ok}
-                sc=sum(conds.values())
-                # ORB-based entry/SL/target
-                orb_mid  = round((h+l)/2, 2)
-                orb_range= round(h-l, 2)
-                en       = round(h+0.05, 2)          # Just above ORB high
-                sl       = round(orb_mid-0.05, 2)    # ORB midpoint SL
-                rp       = round(en-sl, 2)
-                if rp<=0: continue
-                t1       = round(en + orb_range*0.5, 2)  # 0.5x range target
-                t2       = round(en + orb_range*1.0, 2)  # 1.0x range target
-                # Intraday qty: 5x leverage (20% margin)
-                intraday_capital = CAPITAL * 5
-                qty = max(1, math.floor(intraday_capital / en))
-                max_risk_qty = max(1, math.floor(risk_amt / rp))
-                qty = min(qty, max_risk_qty * 5)  # Cap at 5x risk qty
-                longs.append({
-                    "sym":sym,"sec":info["sec"],"ltp":p,"chg":pct_chg(sym),
+        # VWAP
+        vwap_val=calc_vwap(c)
+
+        # First candle move % (how much stock already moved from open)
+        first_candle_pct=abs(h-op)/op*100 if op>0 else 0
+
+        # Gap % from prev close
+        prev=prev_close(sym)
+        gap_pct=abs(op-prev)/prev*100 if prev>0 else 0
+
+        # Indicators
+        e20=ema(closes,20); r=rsi(closes); vr=vol_ratio(vols)
+        macd_b=macd_bull(closes); st_b=st_bull(c)
+        vwap_long=p>vwap_val if vwap_val>0 else p>e20
+        vwap_short=p<vwap_val if vwap_val>0 else p<e20
+
+        # ── SMART FILTERS ─────────────────────────────────────────────
+        skip_reason=None
+
+        # Filter 1: Already moved too much in first candle
+        if first_candle_pct>1.0:
+            skip_reason=f"First candle moved {first_candle_pct:.1f}% — momentum used up"
+
+        # Filter 2: ATR too low (stock won't move enough)
+        elif atr>0 and atr<info["atr_min"]:
+            skip_reason=f"ATR ₹{atr:.0f} below minimum ₹{info['atr_min']} — not enough move"
+
+        # Filter 3: Gap too large (move already priced in)
+        elif gap_pct>2.0:
+            skip_reason=f"Gap {gap_pct:.1f}% at open — move already priced in"
+
+        # Filter 4: VIX too high — skip equity
+        elif vix_data["ltp"]>16:
+            skip_reason=f"VIX {vix_data['ltp']} > 16 — too risky for equity"
+
+        # Filter 5: Volume too low
+        elif vr<1.0:
+            skip_reason=f"Volume {vr}x below average — no participation"
+
+        if skip_reason:
+            skipped.append({
+                "sym":sym,"sec":info["sec"],"ltp":p,
+                "chg":pct_chg(sym),"reason":skip_reason,
+                "first_candle_pct":round(first_candle_pct,2),
+                "atr":atr,"gap_pct":round(gap_pct,2)
+            })
+            print(f"  SKIP {sym}: {skip_reason}")
+            continue
+
+        # ── 6-CONDITION ROCKERS SCORE ──────────────────────────────────
+        # LONG conditions
+        long_conds={
+            "EMA20": p>e20,
+            "SUPERT": st_b,
+            "RSI": 50<=r<=70,
+            "MACD": macd_b,
+            "VOL": vr>=1.5,
+            "VWAP": vwap_long,
+        }
+        long_score=sum(long_conds.values())
+
+        # SHORT conditions
+        short_conds={
+            "EMA20": p<e20,
+            "SUPERT": not st_b,
+            "RSI": 30<=r<=50,
+            "MACD": not macd_b,
+            "VOL": vr>=1.5,
+            "VWAP": vwap_short,
+        }
+        short_score=sum(short_conds.values())
+
+        # ORB-based levels
+        orb_range=round(h-l,2)
+        orb_mid=round((h+l)/2,2)
+
+        if long_score>=4:
+            en=round(h+0.05,2)
+            sl=round(orb_mid-0.05,2)
+            rp=round(en-sl,2)
+            if rp>0:
+                t1=round(en+orb_range*0.5,2)
+                t2=round(en+orb_range*1.0,2)
+                qty=min(
+                    int((CAPITAL*MARGIN)/en),
+                    max(1,int(risk_amt/rp)*3)
+                )
+                candidates.append({
+                    "sym":sym,"sec":info["sec"],"side":"LONG",
+                    "ltp":p,"chg":pct_chg(sym),"prev":prev,
                     "open":op,"high":h,"low":l,"vwap":vwap_val,
                     "orb_high":h,"orb_low":l,"orb_mid":orb_mid,"orb_range":orb_range,
-                    "score":sc,"rsi":r,"vol_ratio":vr,
-                    "conds":{k:bool(v) for k,v in conds.items()},
+                    "atr":atr,"first_candle_pct":round(first_candle_pct,2),
+                    "gap_pct":round(gap_pct,2),
+                    "score":long_score,"rsi":r,"vol_ratio":vr,
+                    "conds":{k:bool(v) for k,v in long_conds.items()},
                     "entry":en,"sl":sl,"t1":t1,"t2":t2,
                     "gtt_trigger":en,"gtt_limit":round(en+0.05,2),
                     "sl_trigger":sl,"sl_limit":round(sl-0.05,2),
                     "qty":qty,"risk_per_share":rp,
-                    "max_risk":round(rp*max_risk_qty,0),
+                    "max_risk":round(rp*qty,0),
                     "potential_profit":round((t1-en)*qty,0),
-                    "side":"LONG","bias":bias,"phase":phase
+                    "bias":bias,"vix":vix_data["ltp"],
+                    "phase":phase
                 })
 
-            if info["sec"] in bot4:
-                vwap_ok=p<vwap_val if vwap_val>0 else p<e20
-                conds={"EMA20":p<e20,"SUPERT":not st_b,"RSI":30<=r<=50,
-                       "MACD":not macd_b,"VOL":vr>=1.5,"VWAP":vwap_ok}
-                sc=sum(conds.values())
-                # ORB-based entry/SL/target
-                orb_mid  = round((h+l)/2, 2)
-                orb_range= round(h-l, 2)
-                en       = round(l-0.05, 2)          # Just below ORB low
-                sl       = round(orb_mid+0.05, 2)    # ORB midpoint SL
-                rp       = round(sl-en, 2)
-                if rp<=0: continue
-                t1       = round(en - orb_range*0.5, 2)  # 0.5x range target
-                t2       = round(en - orb_range*1.0, 2)  # 1.0x range target
-                # Intraday qty: 5x leverage (20% margin)
-                intraday_capital = CAPITAL * 5
-                qty = max(1, math.floor(intraday_capital / en))
-                max_risk_qty = max(1, math.floor(risk_amt / rp))
-                qty = min(qty, max_risk_qty * 5)
-                shorts.append({
-                    "sym":sym,"sec":info["sec"],"ltp":p,"chg":pct_chg(sym),
+        if short_score>=4:
+            en=round(l-0.05,2)
+            sl=round(orb_mid+0.05,2)
+            rp=round(sl-en,2)
+            if rp>0:
+                t1=round(en-orb_range*0.5,2)
+                t2=round(en-orb_range*1.0,2)
+                qty=min(
+                    int((CAPITAL*MARGIN)/en),
+                    max(1,int(risk_amt/rp)*3)
+                )
+                candidates.append({
+                    "sym":sym,"sec":info["sec"],"side":"SHORT",
+                    "ltp":p,"chg":pct_chg(sym),"prev":prev,
                     "open":op,"high":h,"low":l,"vwap":vwap_val,
                     "orb_high":h,"orb_low":l,"orb_mid":orb_mid,"orb_range":orb_range,
-                    "score":sc,"rsi":r,"vol_ratio":vr,
-                    "conds":{k:bool(v) for k,v in conds.items()},
+                    "atr":atr,"first_candle_pct":round(first_candle_pct,2),
+                    "gap_pct":round(gap_pct,2),
+                    "score":short_score,"rsi":r,"vol_ratio":vr,
+                    "conds":{k:bool(v) for k,v in short_conds.items()},
                     "entry":en,"sl":sl,"t1":t1,"t2":t2,
                     "gtt_trigger":en,"gtt_limit":round(en-0.05,2),
                     "sl_trigger":sl,"sl_limit":round(sl+0.05,2),
                     "qty":qty,"risk_per_share":rp,
-                    "max_risk":round(rp*max_risk_qty,0),
+                    "max_risk":round(rp*qty,0),
                     "potential_profit":round((en-t1)*qty,0),
-                    "side":"SHORT","bias":bias,"phase":phase
+                    "bias":bias,"vix":vix_data["ltp"],
+                    "phase":phase
                 })
 
-        longs.sort(key=lambda x:x["score"],reverse=True)
-        shorts.sort(key=lambda x:x["score"],reverse=True)
-        print(f"Longs: {len(longs)} | Shorts: {len(shorts)}")
-        print(f"Top 2 Long: {[s['sym'] for s in longs[:2]]}")
-        print(f"Top 2 Short: {[s['sym'] for s in shorts[:2]]}")
+    # Sort by score descending
+    candidates.sort(key=lambda x:x["score"],reverse=True)
 
-        # Excel journal — top 2 only for actual trades
-        all_signals=[{**s} for s in longs[:2]+shorts[:2]]
-        if all_signals:
-            try: update_excel(all_signals,ist)
-            except Exception as e: print(f"Excel error: {e}")
+    # Best 1 Long + 1 Short
+    longs  = [c for c in candidates if c["side"]=="LONG"]
+    shorts = [c for c in candidates if c["side"]=="SHORT"]
+
+    print(f"\nCandidates: {len(longs)} Long | {len(shorts)} Short")
+    print(f"Skipped: {len(skipped)} stocks")
+    print(f"Top Long: {longs[0]['sym'] if longs else 'None'}")
+    print(f"Top Short: {shorts[0]['sym'] if shorts else 'None'}")
+    print(f"Bias: {bias}")
+
+    # ── EXCEL ─────────────────────────────────────────────────────────
+    trade_signals=[{**s} for s in longs[:1]+shorts[:1]]
+    if trade_signals:
+        try: update_excel(trade_signals,ist)
+        except Exception as e: print(f"Excel error: {e}")
 
     # ── SAVE DATA.JSON ────────────────────────────────────────────────
     data={
         "generated_at": ist.strftime("%d %b %Y %I:%M %p IST"),
         "phase": phase,
         "phase_label": phase_label,
-        "market_status": "OPEN" if mkt_open else "PRE-MARKET" if ist.hour<9 or (ist.hour==9 and ist.minute<15) else "CLOSED",
-        "is_live": True,
-        "market": {
-            "nifty50": {"ltp":nifty_ltp,"chg":nifty_chg,"pts":nifty_pts,"prev":nifty_prev},
-            "vix":     {"ltp":vix_data["ltp"],"chg":vix_data["chg"],"prev":vix_data["prev"],
-                        "status":vix_data["status"],"source":vix_data["source"]},
-            "bias":    bias
+        "market_status": "OPEN" if mkt_open else "CLOSED",
+        "market":{
+            "nifty50":{"ltp":nifty_ltp,"chg":nifty_chg,"pts":nifty_pts,"prev":nifty_prev},
+            "vix":{"ltp":vix_data["ltp"],"chg":vix_data["chg"],"prev":vix_data["prev"],
+                   "status":vix_data["status"],"source":vix_data["source"]},
+            "bias":bias
         },
         "gift_nifty": gift,
-        "pre_market": {
-            "top_gainers": top_gainers,
-            "top_losers":  top_losers,
-            "analysis":    f"{'Gap Up' if gift['chg']>0.3 else 'Gap Down' if gift['chg']<-0.3 else 'Flat'} open expected. {bias} bias."
+        "pre_market":{
+            "analysis": f"Gift Nifty {gift['bias']}. {bias} bias. VIX {vix_data['ltp'] or 'N/A'}.",
+            "top_gainers": sorted([{"sym":s,"ltp":ltp(s),"chg":pct_chg(s),"sec":info["sec"]}
+                                   for s,info in STOCKS.items() if ltp(s)>0],
+                                  key=lambda x:x["chg"],reverse=True)[:3],
+            "top_losers":  sorted([{"sym":s,"ltp":ltp(s),"chg":pct_chg(s),"sec":info["sec"]}
+                                   for s,info in STOCKS.items() if ltp(s)>0],
+                                  key=lambda x:x["chg"])[:3],
         },
-        "finnifty": {
+        "finnifty":{
             "ltp":fn_ltp,"chg":fn_chg,"pts":fn_pts,"prev":fn_prev,"atm":fn_atm,
             "orb_open":fn_orb["open"],"orb_high":fn_orb["high"],
             "orb_low":fn_orb["low"],"orb_close":fn_orb["close"],
@@ -809,21 +657,43 @@ def main():
             "pe_sl":round(fn_orb["pe_prem"]*0.7,0),
             "pe_tgt":round(fn_orb["pe_prem"]*1.5,0),
         },
-        "sectors":  sectors,
-        "long":     longs[:5],    # ROCKERS screener — top 5
-        "short":    shorts[:5],   # ROCKERS screener — top 5
-        "trade_long":  longs[:2], # Trade candidates — top 2 only
-        "trade_short": shorts[:2],# Trade candidates — top 2 only
-        "capital":  CAPITAL,
-        "risk_pct": RISK_PCT,
-        "risk_amt": CAPITAL*RISK_PCT/100,
-        "universe": f"Nifty 100 — {len(STOCKS)} stocks",
+        "sectors": [
+            {"name":sec,"chg":round(sum(pct_chg(s) for s in stks if ltp(s)>0)/
+                                   max(1,len([s for s in stks if ltp(s)>0])),2),
+             "leader":max(stks,key=lambda s:abs(pct_chg(s)) if ltp(s)>0 else 0),
+             "leader_price":ltp(max(stks,key=lambda s:abs(pct_chg(s)) if ltp(s)>0 else 0)),
+             "leader_chg":pct_chg(max(stks,key=lambda s:abs(pct_chg(s)) if ltp(s)>0 else 0)),
+             "stocks":[{"sym":s,"ltp":ltp(s),"chg":pct_chg(s)} for s in stks if ltp(s)>0]}
+            for sec,stks in {
+                "BANKING":["HDFCBANK","ICICIBANK","AXISBANK","SBIN","KOTAKBANK"],
+                "IT":["INFY","TCS","WIPRO"],
+                "FINANCE":["BAJFINANCE"],
+                "AUTO":["MARUTI","MM"],
+                "PHARMA":["SUNPHARMA"],
+                "METAL":["TATASTEEL","JSWSTEEL"],
+                "ENERGY":["RELIANCE"],
+                "REALTY":["DLF"],
+                "INFRA":["LT","ADANIPORTS"],
+                "CONSUMER":["TITAN"],
+                "TELECOM":["BHARTIARTL"],
+            }.items()
+        ],
+        "rockers": candidates[:10],        # Top 10 for screener display
+        "long":    longs[:5],              # Top 5 longs for screener
+        "short":   shorts[:5],             # Top 5 shorts for screener
+        "trade_long":  longs[:1],          # BEST 1 LONG for GTT
+        "trade_short": shorts[:1],         # BEST 1 SHORT for GTT
+        "skipped": skipped[:5],            # Skipped with reasons
+        "capital":CAPITAL,"risk_pct":RISK_PCT,"risk_amt":risk_amt,
+        "universe": f"Top 20 F&O stocks",
+        "vix_value": vix_data["ltp"],
     }
 
     with open("data.json","w") as f:
         json.dump(data,f,indent=2)
-    print(f"✅ data.json saved! Phase: {phase}")
-    print(f"═══ DONE ═══")
+    print(f"\n✅ data.json saved!")
+    print(f"Trade: {longs[0]['sym'] if longs else 'No long'} LONG + {shorts[0]['sym'] if shorts else 'No short'} SHORT")
+    print(f"{'='*60}")
 
 if __name__=="__main__":
     main()
