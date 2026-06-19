@@ -591,8 +591,8 @@ function render(d,ai){
   const rockers=d.rockers||[];
   const longs=d.long||rockers.filter(r=>r.side==='LONG');
   const shorts=d.short||rockers.filter(r=>r.side==='SHORT');
-  const tradeLongs=d.trade_long||longs.slice(0,1);
-  const tradeShorts=d.trade_short||shorts.slice(0,1);
+  const tradeLongs=d.trade_long||longs.slice(0,2);
+  const tradeShorts=d.trade_short||shorts.slice(0,2);
   const skipped=d.skipped||[];
   $('rck-bdg').textContent=`${longs.filter(s=>s.score>=5).length}L · ${shorts.filter(s=>s.score>=5).length}S STRONG · ${d.universe||'Nifty 100'}`;
   const rckCard=s=>{
@@ -623,7 +623,7 @@ function render(d,ai){
   sh('s4');
 
   // ── 5. TRADE CANDIDATES ────────────────────────────────────────────
-  $('tcnt').textContent=`BEST 1L · 1S · ${skipped.length} FILTERED OUT`;
+  $('tcnt').textContent=`TOP 2L · 2S · ${skipped.length} FILTERED`;
 
   // Show skipped stocks with reasons
   const skipHtml=skipped.length?`
