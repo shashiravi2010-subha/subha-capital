@@ -588,9 +588,12 @@ function render(d,ai){
   sh('s3');
 
   // ── 4. ROCKERS ─────────────────────────────────────────────────────
-  const longs=d.long||[],shorts=d.short||[];
-  const tradeLongs=d.trade_long||longs.slice(0,2);
-  const tradeShorts=d.trade_short||shorts.slice(0,2);
+  const rockers=d.rockers||[];
+  const longs=d.long||rockers.filter(r=>r.side==='LONG');
+  const shorts=d.short||rockers.filter(r=>r.side==='SHORT');
+  const tradeLongs=d.trade_long||longs.slice(0,1);
+  const tradeShorts=d.trade_short||shorts.slice(0,1);
+  const skipped=d.skipped||[];
   $('rck-bdg').textContent=`${longs.filter(s=>s.score>=5).length}L · ${shorts.filter(s=>s.score>=5).length}S STRONG · ${d.universe||'Nifty 100'}`;
   const rckCard=s=>{
     const isL=s.side==='LONG';
@@ -620,7 +623,24 @@ function render(d,ai){
   sh('s4');
 
   // ── 5. TRADE CANDIDATES ────────────────────────────────────────────
-  $('tcnt').textContent=`${tradeLongs.length}L · ${tradeShorts.length}S · TOP 2 EACH`;
+  $('tcnt').textContent=`BEST 1L · 1S · ${skipped.length} FILTERED OUT`;
+
+  // Show skipped stocks with reasons
+  const skipHtml=skipped.length?`
+    <div style="background:rgba(240,165,0,0.06);border:1px solid rgba(240,165,0,0.15);border-radius:10px;padding:10px;margin-bottom:12px">
+      <div style="font-size:8px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:8px">⚠️ FILTERED OUT — DO NOT TRADE</div>
+      ${skipped.map(s=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bdr)">
+          <div>
+            <span style="font-family:JetBrains Mono,monospace;font-size:12px;font-weight:700;color:var(--gold)">${s.sym}</span>
+            <span style="font-size:8px;color:var(--mut);margin-left:8px">${s.sec}</span>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:9px;color:var(--red)">❌ ${s.reason}</div>
+            <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:${s.chg>=0?'var(--grn)':'var(--red)'}">${s.chg>=0?'+':''}${(s.chg||0).toFixed(2)}%</div>
+          </div>
+        </div>`).join('')}
+    </div>`:'';
 
   const stkCard=s=>{
     const isL=s.side==='LONG';
@@ -690,22 +710,21 @@ function render(d,ai){
       <div class="hint">📊 Tap to open live 15-min TradingView chart</div>
     </div>`;};
 
-  $('long-list').innerHTML=tradeLongs.length?tradeLongs.map(stkCard).join(''):'<div style="color:var(--mut);font-size:11px;padding:10px;text-align:center">No long setups today</div>';
-  $('short-list').innerHTML=tradeShorts.length?tradeShorts.map(stkCard).join(''):'<div style="color:var(--mut);font-size:11px;padding:10px;text-align:center">No short setups today</div>';
+  $('long-list').innerHTML=skipHtml+(tradeLongs.length?tradeLongs.map(stkCard).join(''):'<div style="color:var(--mut);font-size:11px;padding:10px;text-align:center">No valid long setup today — all filtered out</div>');
+  $('short-list').innerHTML=tradeShorts.length?tradeShorts.map(stkCard).join(''):'<div style="color:var(--mut);font-size:11px;padding:10px;text-align:center">No valid short setup today — all filtered out</div>';
   sh('s5');
 
   // ── 6. CHECKLIST ───────────────────────────────────────────────────
   const tL=tradeLongs[0],tS=tradeShorts[0];
-  const tL2=tradeLongs[1],tS2=tradeShorts[1];
   const cks=[
     {ic:'🌐',t:'8:45 AM · Check Gift Nifty gap direction',s:`Gap >+100pts = bullish. Gap <-100pts = bearish. ±50pts = flat. Today: ${gn.bias||'—'}`,col:'var(--grn)'},
     {ic:'📊',t:`9:00 AM · India VIX: ${vix.ltp>0?vix.ltp.toFixed(2):'Check NSE'} ${vix.status?'— '+vix.status:''}`,s:`${vix.ltp>0?(vix.ltp<13?'Safe to trade. Normal size.':vix.ltp<16?'Caution. Reduce size 25%.':'HIGH RISK. Consider skipping.'):'Open nseindia.com → Markets → India VIX · <13 Safe · 13-16 Caution · >16 Skip'}`,col:vixCol},
     {ic:'👁️',t:'9:15 AM · Market opens — WATCH ONLY. Zero entry.',s:'First 15 mins = manipulation. Institutions positioning. NEVER enter before 9:30 AM.',col:'var(--gold)'},
-    {ic:'⏱️',t:'9:30 AM · ORB DONE — Place ALL 4 GTT Orders Now',s:`LONG: ${tL?tL.sym:'-'} + ${tL2?tL2.sym:'-'} · SHORT: ${tS?tS.sym:'-'} + ${tS2?tS2.sym:'-'} · Place GTT OCO → Walk away`,col:'var(--gold)'},
-    {ic:'📈',t:`LONG 1: ${tL?tL.sym:'—'} · Entry ₹${tL?fmt(tL.entry):'—'} · SL ₹${tL?fmt(tL.sl):'—'} · T1 ₹${tL?fmt(tL.t1):'—'} · Qty ${tL?tL.qty:'—'}`,s:`ORB Range ₹${tL?fmt(tL.orb_range||0):'—'} · T1=Range×0.5 · 5x margin`,col:'var(--grn)'},
-    {ic:'📈',t:`LONG 2: ${tL2?tL2.sym:'—'} · Entry ₹${tL2?fmt(tL2.entry):'—'} · SL ₹${tL2?fmt(tL2.sl):'—'} · T1 ₹${tL2?fmt(tL2.t1):'—'} · Qty ${tL2?tL2.qty:'—'}`,s:`ORB Range ₹${tL2?fmt(tL2.orb_range||0):'—'} · T1=Range×0.5 · 5x margin`,col:'var(--grn)'},
-    {ic:'📉',t:`SHORT 1: ${tS?tS.sym:'—'} · Entry ₹${tS?fmt(tS.entry):'—'} · SL ₹${tS?fmt(tS.sl):'—'} · T1 ₹${tS?fmt(tS.t1):'—'} · Qty ${tS?tS.qty:'—'}`,s:`ORB Range ₹${tS?fmt(tS.orb_range||0):'—'} · T1=Range×0.5 · 5x margin`,col:'var(--red)'},
-    {ic:'📉',t:`SHORT 2: ${tS2?tS2.sym:'—'} · Entry ₹${tS2?fmt(tS2.entry):'—'} · SL ₹${tS2?fmt(tS2.sl):'—'} · T1 ₹${tS2?fmt(tS2.t1):'—'} · Qty ${tS2?tS2.qty:'—'}`,s:`ORB Range ₹${tS2?fmt(tS2.orb_range||0):'—'} · T1=Range×0.5 · 5x margin`,col:'var(--red)'},
+    {ic:'⏱️',t:'9:30 AM · ORB DONE — Check Filters · Place GTT Orders',s:`LONG: ${tL?tL.sym+' ₹'+fmt(tL.entry):'-'} · SHORT: ${tS?tS.sym+' ₹'+fmt(tS.entry):'-'} · ${skipped.length} stocks filtered out · Place GTT OCO → Walk away`,col:'var(--gold)'},
+    {ic:'📈',t:`LONG: ${tL?tL.sym:'—'} · Entry ₹${tL?fmt(tL.entry):'—'} · SL ₹${tL?fmt(tL.sl):'—'} · T1 ₹${tL?fmt(tL.t1):'—'} · Qty ${tL?tL.qty:'—'}`,s:`ORB Range ₹${tL?fmt(tL.orb_range||0):'—'} · T1=Range×0.5 · 5x margin · ATR ₹${tL?tL.atr:'—'} · First Candle ${tL?tL.first_candle_pct:'—'}%`,col:'var(--grn)'},
+
+    {ic:'📉',t:`SHORT: ${tS?tS.sym:'—'} · Entry ₹${tS?fmt(tS.entry):'—'} · SL ₹${tS?fmt(tS.sl):'—'} · T1 ₹${tS?fmt(tS.t1):'—'} · Qty ${tS?tS.qty:'—'}`,s:`ORB Range ₹${tS?fmt(tS.orb_range||0):'—'} · T1=Range×0.5 · 5x margin · ATR ₹${tS?tS.atr:'—'} · First Candle ${tS?tS.first_candle_pct:'—'}%`,col:'var(--red)'},
+
     {ic:'🟣',t:'9:45 AM · FINNIFTY ORB — First 30-min candle closes',s:`High ₹${fn.orb_high?fmt(fn.orb_high):'—'} → Buy CE · Low ₹${fn.orb_low?fmt(fn.orb_low):'—'} → Buy PE · ATM: ${fnAtm>0?fnAtm.toLocaleString('en-IN'):'—'}`,col:'var(--pur)'},
     {ic:'🟣',t:`OPTIONS: ${sig==='CE'?'BUY CE — HIGH BROKEN ✅':sig==='PE'?'BUY PE — LOW BROKEN ✅':sig==='MONITOR'?'MONITORING BREAKOUT':'Wait for FINNIFTY ORB'}`,s:`ATM ${fnAtm>0?fnAtm.toLocaleString('en-IN'):'—'} · Target 50% premium · SL 30% premium · Hard exit 3:00 PM`,col:'var(--pur)'},
     {ic:'🚫',t:'3:00 PM · Options HARD EXIT — No exceptions',s:'Close ALL options positions by 3:00 PM regardless of P&L.',col:'var(--red)'},
