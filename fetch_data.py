@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 """
 SUBHA CAPITAL — Market Data Fetcher V10
-Data-backed intraday system for NSE
-
-KEY IMPROVEMENTS:
-- Universe: Top 20 F&O stocks only (most liquid)
-- First candle move filter (skip if >1% already moved)
-- ATR filter (skip if ATR < ₹15)
-- Best 1 Long + 1 Short only
-- ORB-based entry/SL/target
-- 5x intraday margin qty
-- Gap filter (skip if gap >2%)
+Original ROCKERS System — Restored
+Nifty 100 Universe (91 stocks)
+6-condition ROCKERS scan
+Top 2 Long + Top 2 Short for GTT
+Only 2 smart filters:
+  1. First candle moved >2% → Skip
+  2. Gap >5% at open → Skip (results day)
 """
 
 import os,json,math,pyotp,requests,pytz,time,openpyxl
@@ -24,32 +21,119 @@ TOTP_SECRET = os.environ["ANGEL_TOTP_SECRET"]
 PIN         = os.environ["ANGEL_PIN"]
 CAPITAL     = 100000
 RISK_PCT    = 1.0
-MARGIN      = 5       # 5x intraday leverage
+MARGIN      = 5
 IST         = pytz.timezone("Asia/Kolkata")
 BASE        = "https://apiconnect.angelone.in"
 
-# ── TOP 20 F&O STOCKS — Most liquid, tightest spread ─────────────────
+# ── NIFTY 100 UNIVERSE (91 stocks) ───────────────────────────────────
 STOCKS = {
-    "RELIANCE":   {"token":"2885",  "sec":"ENERGY",  "atr_min":20},
-    "HDFCBANK":   {"token":"1333",  "sec":"BANKING", "atr_min":15},
-    "ICICIBANK":  {"token":"4963",  "sec":"BANKING", "atr_min":15},
-    "INFY":       {"token":"1594",  "sec":"IT",      "atr_min":20},
-    "TCS":        {"token":"11536", "sec":"IT",      "atr_min":30},
-    "AXISBANK":   {"token":"5900",  "sec":"BANKING", "atr_min":15},
-    "SBIN":       {"token":"3045",  "sec":"BANKING", "atr_min":10},
-    "BAJFINANCE": {"token":"317",   "sec":"FINANCE", "atr_min":30},
-    "KOTAKBANK":  {"token":"1922",  "sec":"BANKING", "atr_min":20},
-    "LT":         {"token":"11483", "sec":"INFRA",   "atr_min":40},
-    "TATASTEEL":  {"token":"3499",  "sec":"METAL",   "atr_min":10},
-    "JSWSTEEL":   {"token":"11723", "sec":"METAL",   "atr_min":15},
-    "MARUTI":     {"token":"10999", "sec":"AUTO",    "atr_min":80},
-    "MM":         {"token":"2031",  "sec":"AUTO",    "atr_min":30},
-    "BHARTIARTL": {"token":"10604", "sec":"TELECOM", "atr_min":10},
-    "DLF":        {"token":"14732", "sec":"REALTY",  "atr_min":10},
-    "ADANIPORTS": {"token":"15083", "sec":"INFRA",   "atr_min":15},
-    "SUNPHARMA":  {"token":"3351",  "sec":"PHARMA",  "atr_min":15},
-    "TITAN":      {"token":"3506",  "sec":"CONSUMER","atr_min":30},
-    "WIPRO":      {"token":"3787",  "sec":"IT",      "atr_min":10},
+    "HDFCBANK":   {"token":"1333",  "sec":"BANKING"},
+    "ICICIBANK":  {"token":"4963",  "sec":"BANKING"},
+    "SBIN":       {"token":"3045",  "sec":"BANKING"},
+    "AXISBANK":   {"token":"5900",  "sec":"BANKING"},
+    "KOTAKBANK":  {"token":"1922",  "sec":"BANKING"},
+    "BANKBARODA": {"token":"4668",  "sec":"BANKING"},
+    "INDUSINDBK": {"token":"5258",  "sec":"BANKING"},
+    "CANBK":      {"token":"10794", "sec":"BANKING"},
+    "BAJFINANCE": {"token":"317",   "sec":"FINANCE"},
+    "BAJAJFINSV": {"token":"16675", "sec":"FINANCE"},
+    "HDFCLIFE":   {"token":"467",   "sec":"FINANCE"},
+    "SBILIFE":    {"token":"21808", "sec":"FINANCE"},
+    "ICICIPRULI": {"token":"18529", "sec":"FINANCE"},
+    "CHOLAFIN":   {"token":"685",   "sec":"FINANCE"},
+    "MUTHOOTFIN": {"token":"13923", "sec":"FINANCE"},
+    "PFC":        {"token":"14299", "sec":"FINANCE"},
+    "RECLTD":     {"token":"21614", "sec":"FINANCE"},
+    "SHRIRAMFIN": {"token":"4306",  "sec":"FINANCE"},
+    "INFY":       {"token":"1594",  "sec":"IT"},
+    "TCS":        {"token":"11536", "sec":"IT"},
+    "WIPRO":      {"token":"3787",  "sec":"IT"},
+    "HCLTECH":    {"token":"7229",  "sec":"IT"},
+    "TECHM":      {"token":"13538", "sec":"IT"},
+    "LTIM":       {"token":"17818", "sec":"IT"},
+    "MPHASIS":    {"token":"4503",  "sec":"IT"},
+    "PERSISTENT": {"token":"18365", "sec":"IT"},
+    "COFORGE":    {"token":"11543", "sec":"IT"},
+    "OFSS":       {"token":"10738", "sec":"IT"},
+    "MARUTI":     {"token":"10999", "sec":"AUTO"},
+    "MM":         {"token":"2031",  "sec":"AUTO"},
+    "TATAMOTORS": {"token":"3456",  "sec":"AUTO"},
+    "BAJAJ-AUTO": {"token":"16669", "sec":"AUTO"},
+    "HEROMOTOCO": {"token":"1348",  "sec":"AUTO"},
+    "EICHERMOT":  {"token":"910",   "sec":"AUTO"},
+    "TVSMOTOR":   {"token":"3518",  "sec":"AUTO"},
+    "ASHOKLEY":   {"token":"212",   "sec":"AUTO"},
+    "SUNPHARMA":  {"token":"3351",  "sec":"PHARMA"},
+    "DRREDDY":    {"token":"881",   "sec":"PHARMA"},
+    "CIPLA":      {"token":"694",   "sec":"PHARMA"},
+    "DIVISLAB":   {"token":"10940", "sec":"PHARMA"},
+    "AUROPHARMA": {"token":"275",   "sec":"PHARMA"},
+    "ALKEM":      {"token":"13634", "sec":"PHARMA"},
+    "BIOCON":     {"token":"524",   "sec":"PHARMA"},
+    "UPL":        {"token":"11287", "sec":"PHARMA"},
+    "TATASTEEL":  {"token":"3499",  "sec":"METAL"},
+    "JSWSTEEL":   {"token":"11723", "sec":"METAL"},
+    "HINDALCO":   {"token":"1363",  "sec":"METAL"},
+    "COALINDIA":  {"token":"20374", "sec":"METAL"},
+    "VEDL":       {"token":"3063",  "sec":"METAL"},
+    "NMDC":       {"token":"15332", "sec":"METAL"},
+    "HINDUNILVR": {"token":"1394",  "sec":"FMCG"},
+    "ITC":        {"token":"1660",  "sec":"FMCG"},
+    "BRITANNIA":  {"token":"547",   "sec":"FMCG"},
+    "NESTLEIND":  {"token":"17963", "sec":"FMCG"},
+    "DABUR":      {"token":"772",   "sec":"FMCG"},
+    "GODREJCP":   {"token":"10099", "sec":"FMCG"},
+    "MARICO":     {"token":"4067",  "sec":"FMCG"},
+    "COLPAL":     {"token":"1367",  "sec":"FMCG"},
+    "RELIANCE":   {"token":"2885",  "sec":"ENERGY"},
+    "ONGC":       {"token":"2475",  "sec":"ENERGY"},
+    "BPCL":       {"token":"526",   "sec":"ENERGY"},
+    "NTPC":       {"token":"11630", "sec":"ENERGY"},
+    "POWERGRID":  {"token":"14977", "sec":"ENERGY"},
+    "TATAPOWER":  {"token":"3426",  "sec":"ENERGY"},
+    "IOC":        {"token":"1624",  "sec":"ENERGY"},
+    "DLF":        {"token":"14732", "sec":"REALTY"},
+    "GODREJPROP": {"token":"9742",  "sec":"REALTY"},
+    "OBEROIRLTY": {"token":"20316", "sec":"REALTY"},
+    "LT":         {"token":"11483", "sec":"INFRA"},
+    "ADANIPORTS": {"token":"15083", "sec":"INFRA"},
+    "SIEMENS":    {"token":"3150",  "sec":"INFRA"},
+    "ABB":        {"token":"13",    "sec":"INFRA"},
+    "BEL":        {"token":"383",   "sec":"INFRA"},
+    "HAL":        {"token":"10455", "sec":"INFRA"},
+    "BHEL":       {"token":"438",   "sec":"INFRA"},
+    "TITAN":      {"token":"3506",  "sec":"CONSUMER"},
+    "ASIANPAINT": {"token":"236",   "sec":"CONSUMER"},
+    "PIDILITIND": {"token":"2664",  "sec":"CONSUMER"},
+    "HAVELLS":    {"token":"10350", "sec":"CONSUMER"},
+    "VOLTAS":     {"token":"3718",  "sec":"CONSUMER"},
+    "DMART":      {"token":"14413", "sec":"CONSUMER"},
+    "TRENT":      {"token":"3721",  "sec":"CONSUMER"},
+    "ZOMATO":     {"token":"5097",  "sec":"CONSUMER"},
+    "NYKAA":      {"token":"21431", "sec":"CONSUMER"},
+    "IRCTC":      {"token":"13611", "sec":"CONSUMER"},
+    "ULTRACEMCO": {"token":"11532", "sec":"CEMENT"},
+    "GRASIM":     {"token":"1232",  "sec":"CEMENT"},
+    "AMBUJACEM":  {"token":"1270",  "sec":"CEMENT"},
+    "SHREECEM":   {"token":"3103",  "sec":"CEMENT"},
+    "BHARTIARTL": {"token":"10604", "sec":"TELECOM"},
+    "INDUSTOWER": {"token":"17491", "sec":"TELECOM"},
+}
+
+SECTOR_STOCKS = {
+    "BANKING":  ["HDFCBANK","ICICIBANK","SBIN","AXISBANK","KOTAKBANK","INDUSINDBK"],
+    "FINANCE":  ["BAJFINANCE","BAJAJFINSV","CHOLAFIN","PFC","RECLTD","MUTHOOTFIN"],
+    "IT":       ["INFY","TCS","WIPRO","HCLTECH","TECHM","LTIM"],
+    "AUTO":     ["MARUTI","MM","TATAMOTORS","BAJAJ-AUTO","HEROMOTOCO"],
+    "PHARMA":   ["SUNPHARMA","DRREDDY","CIPLA","DIVISLAB","AUROPHARMA"],
+    "METAL":    ["TATASTEEL","JSWSTEEL","HINDALCO","COALINDIA","VEDL"],
+    "FMCG":     ["HINDUNILVR","ITC","BRITANNIA","NESTLEIND","DABUR"],
+    "ENERGY":   ["RELIANCE","ONGC","BPCL","NTPC","POWERGRID"],
+    "REALTY":   ["DLF","GODREJPROP","OBEROIRLTY"],
+    "INFRA":    ["LT","ADANIPORTS","BEL","HAL","BHEL"],
+    "CONSUMER": ["TITAN","ASIANPAINT","DMART","TRENT","ZOMATO"],
+    "CEMENT":   ["ULTRACEMCO","GRASIM","AMBUJACEM"],
+    "TELECOM":  ["BHARTIARTL","INDUSTOWER"],
 }
 
 INDICES = {"NIFTY50":"26000","FINNIFTY":"26037"}
@@ -77,8 +161,7 @@ def get_phase_label(p):
 # ── GIFT NIFTY ────────────────────────────────────────────────────────
 def fetch_gift_nifty():
     gift={"ltp":0,"chg":0,"bias":"—","source":"—"}
-    hdrs={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-          "Accept":"application/json"}
+    hdrs={"User-Agent":"Mozilla/5.0","Accept":"application/json"}
     for sym in ["^NSEI","^CNXNIFTY","NIFTYBEES.NS"]:
         try:
             r=requests.get(
@@ -108,51 +191,32 @@ def fetch_gift_nifty():
 # ── VIX ───────────────────────────────────────────────────────────────
 def fetch_vix():
     vix={"ltp":0,"chg":0,"prev":0,"status":"—","source":"—"}
-    hdrs={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-          "Accept":"application/json"}
-    # Method 1: Yahoo Finance
-    try:
-        s=requests.Session()
-        s.headers.update(hdrs)
-        s.get("https://finance.yahoo.com",timeout=6)
-        r=s.get("https://query1.finance.yahoo.com/v8/finance/chart/%5EINDIAVIX?interval=1d&range=2d",
-                timeout=8)
-        if r.ok:
-            result=r.json().get("chart",{}).get("result",[])
-            if result:
-                meta=result[0].get("meta",{})
-                p=float(meta.get("regularMarketPrice",0))
-                prev=float(meta.get("previousClose",0))
-                if p>0:
-                    vix={"ltp":round(p,2),"prev":round(prev,2),
-                         "chg":round(p-prev,2),
-                         "status":"<13 SAFE" if p<13 else "13-16 CAUTION" if p<16 else ">16 HIGH RISK",
-                         "source":"Yahoo"}
-                    print(f"VIX: {p} — {vix['status']}")
-                    return vix
-    except: pass
-    # Method 2: Yahoo v2
-    try:
-        r=requests.get(
-            "https://query2.finance.yahoo.com/v8/finance/chart/%5EINDIAVIX?interval=1d&range=2d",
-            headers=hdrs,timeout=8)
-        if r.ok:
-            result=r.json().get("chart",{}).get("result",[])
-            if result:
-                meta=result[0].get("meta",{})
-                p=float(meta.get("regularMarketPrice",0))
-                if p>0:
-                    vix["ltp"]=round(p,2)
-                    vix["status"]="<13 SAFE" if p<13 else "13-16 CAUTION" if p<16 else ">16 HIGH RISK"
-                    vix["source"]="Yahoo v2"
-                    print(f"VIX v2: {p}")
-                    return vix
-    except: pass
+    hdrs={"User-Agent":"Mozilla/5.0","Accept":"application/json"}
+    for url in [
+        "https://query1.finance.yahoo.com/v8/finance/chart/%5EINDIAVIX?interval=1d&range=2d",
+        "https://query2.finance.yahoo.com/v8/finance/chart/%5EINDIAVIX?interval=1d&range=2d",
+    ]:
+        try:
+            r=requests.get(url,headers=hdrs,timeout=8)
+            if r.ok:
+                result=r.json().get("chart",{}).get("result",[])
+                if result:
+                    meta=result[0].get("meta",{})
+                    p=float(meta.get("regularMarketPrice",0))
+                    prev=float(meta.get("previousClose",0))
+                    if p>0:
+                        vix={"ltp":round(p,2),"prev":round(prev,2),
+                             "chg":round(p-prev,2),
+                             "status":"<13 SAFE" if p<13 else "13-16 CAUTION" if p<16 else ">16 HIGH RISK",
+                             "source":"Yahoo"}
+                        print(f"VIX: {p} — {vix['status']}")
+                        return vix
+        except: continue
     print("VIX: All sources failed")
     return vix
 
 # ── API HELPERS ───────────────────────────────────────────────────────
-def hdrs(tok=None):
+def api_hdrs(tok=None):
     h={"Content-Type":"application/json","Accept":"application/json",
        "X-UserType":"USER","X-SourceID":"WEB",
        "X-ClientLocalIP":"192.168.1.1","X-ClientPublicIP":"106.193.147.98",
@@ -165,7 +229,7 @@ def login():
     print(f"TOTP: {totp}")
     r=requests.post(f"{BASE}/rest/auth/angelbroking/user/v1/loginByPassword",
         json={"clientcode":CLIENT_ID,"password":PIN,"totp":totp},
-        headers=hdrs(),timeout=15)
+        headers=api_hdrs(),timeout=15)
     d=r.json()
     if d.get("status") and d.get("data",{}).get("jwtToken"):
         print("✅ Login OK")
@@ -179,12 +243,11 @@ def get_quotes(tok,tokens):
         try:
             r=requests.post(f"{BASE}/rest/secure/angelbroking/market/v1/quote/",
                 json={"mode":"FULL","exchangeTokens":{"NSE":batch}},
-                headers=hdrs(tok),timeout=15)
+                headers=api_hdrs(tok),timeout=15)
             d=r.json()
             if d.get("status") and d.get("data"):
                 all_data.extend(d["data"].get("fetched",[]))
-        except Exception as e:
-            print(f"Quote error: {e}")
+        except Exception as e: print(f"Quote error: {e}")
         time.sleep(0.3)
     return all_data
 
@@ -193,10 +256,9 @@ def get_candles(tok,sym_tok,interval,fr,to):
         r=requests.post(f"{BASE}/rest/secure/angelbroking/historical/v1/getCandleData",
             json={"exchange":"NSE","symboltoken":sym_tok,
                   "interval":interval,"fromdate":fr,"todate":to},
-            headers=hdrs(tok),timeout=15)
+            headers=api_hdrs(tok),timeout=15)
         return r.json()
-    except:
-        return {}
+    except: return {}
 
 # ── INDICATORS ────────────────────────────────────────────────────────
 def ema(prices,n):
@@ -216,20 +278,6 @@ def rsi(prices,n=14):
     for i in range(n,len(g)):
         ag=(ag*(n-1)+g[i])/n; al=(al*(n-1)+l[i])/n
     return 100 if al==0 else round(100-100/(1+ag/al))
-
-def atr_calc(candles,n=14):
-    """Calculate 14-day ATR"""
-    if len(candles)<2: return 0
-    trs=[]
-    for i in range(1,len(candles)):
-        h=float(candles[i][2]); l=float(candles[i][3]); pc=float(candles[i-1][4])
-        tr=max(h-l,abs(h-pc),abs(l-pc))
-        trs.append(tr)
-    if not trs: return 0
-    atr=sum(trs[:n])/min(n,len(trs))
-    for tr in trs[n:]:
-        atr=(atr*(n-1)+tr)/n
-    return round(atr,2)
 
 def macd_bull(prices):
     if len(prices)<26: return True
@@ -264,10 +312,10 @@ def update_excel(signals,ist):
         wb=openpyxl.load_workbook(fname); ws=wb.active
     except:
         wb=openpyxl.Workbook(); ws=wb.active; ws.title="SUBHA CAPITAL"
-        headers=["Date","Stock","Sector","Side","Score","ATR","First Candle%",
-                 "Pre-Mkt Price","ORB High","ORB Low","ORB Range",
+        headers=["Date","Stock","Sector","Side","Score","Pre-Mkt Price",
+                 "Open","High","Low","VWAP","ORB High","ORB Low","ORB Range",
                  "Entry","SL","T1","T2","Qty","Max Risk ₹","Potential ₹",
-                 "Bias","VIX","Result","P&L ₹","Notes"]
+                 "Bias","Result","P&L ₹","Notes"]
         hf=PatternFill(start_color="0D1221",end_color="0D1221",fill_type="solid")
         hfont=Font(bold=True,color="F0A500",size=10)
         for col,h in enumerate(headers,1):
@@ -275,7 +323,7 @@ def update_excel(signals,ist):
             cell.fill=hf; cell.font=hfont
             cell.alignment=Alignment(horizontal='center',vertical='center')
         ws.row_dimensions[1].height=28
-        widths=[12,12,10,8,7,8,12,14,10,10,10,10,10,10,10,6,10,12,10,8,10,10,20]
+        widths=[12,12,10,8,7,14,10,10,10,10,10,10,10,10,10,10,10,6,10,12,10,10,10,20]
         for i,w in enumerate(widths,1):
             ws.column_dimensions[get_column_letter(i)].width=w
 
@@ -283,11 +331,11 @@ def update_excel(signals,ist):
     for s in signals:
         isL=s["side"]=="LONG"
         row=[date_str,s["sym"],s["sec"],s["side"],f"{s['score']}/6",
-             s.get("atr",0),f"{s.get('first_candle_pct',0):.2f}%",
-             s["ltp"],s.get("orb_high",0),s.get("orb_low",0),s.get("orb_range",0),
+             s["ltp"],s.get("open",""),s.get("high",""),s.get("low",""),s.get("vwap",0),
+             s.get("orb_high",0),s.get("orb_low",0),s.get("orb_range",0),
              s["entry"],s["sl"],s["t1"],s["t2"],s["qty"],
              s.get("max_risk",0),s.get("potential_profit",0),
-             s.get("bias",""),s.get("vix",0),"","",""]
+             s.get("bias",""),"","",""]
         rn=ws.max_row+1
         fc="002D1C" if isL else "2D0010"
         rf=PatternFill(start_color=fc,end_color=fc,fill_type="solid")
@@ -295,9 +343,9 @@ def update_excel(signals,ist):
             cell=ws.cell(row=rn,column=col,value=val)
             cell.fill=rf; cell.alignment=Alignment(horizontal='center')
             if col==4: cell.font=Font(color="00D4A0" if isL else "FF4560",bold=True)
-            elif col in [12]: cell.font=Font(color="F0A500",bold=True)
-            elif col==13: cell.font=Font(color="FF4560",bold=True)
-            elif col in [14,15]: cell.font=Font(color="00D4A0",bold=True)
+            elif col==14: cell.font=Font(color="F0A500",bold=True)
+            elif col==15: cell.font=Font(color="FF4560",bold=True)
+            elif col in [16,17]: cell.font=Font(color="00D4A0",bold=True)
     wb.save(fname)
     print(f"✅ Excel: {ws.max_row-1} signals")
 
@@ -307,9 +355,9 @@ def main():
     phase=get_phase(ist)
     phase_label=get_phase_label(phase)
     print(f"{'='*60}")
-    print(f"SUBHA CAPITAL V10 — {ist.strftime('%d %b %Y %H:%M IST')}")
+    print(f"SUBHA CAPITAL — {ist.strftime('%d %b %Y %H:%M IST')}")
     print(f"Phase: {phase} — {phase_label}")
-    print(f"Universe: Top 20 F&O stocks")
+    print(f"Universe: Nifty 100 — {len(STOCKS)} stocks")
     print(f"{'='*60}")
 
     mkt_open=(ist.hour>9 or (ist.hour==9 and ist.minute>=15)) and \
@@ -318,15 +366,16 @@ def main():
     # ── GIFT NIFTY + VIX ─────────────────────────────────────────────
     print("\nFetching Gift Nifty...")
     gift=fetch_gift_nifty()
-    print("\nFetching India VIX...")
+    print("Fetching India VIX...")
     vix_data=fetch_vix()
 
     # ── LOGIN ─────────────────────────────────────────────────────────
     jwt=login()
 
     # ── QUOTES ───────────────────────────────────────────────────────
-    all_toks=[v["token"] for v in STOCKS.values()]+list(INDICES.values())
-    fetched=get_quotes(jwt,all_toks)
+    stk_toks=[v["token"] for v in STOCKS.values()]
+    idx_toks=list(INDICES.values())
+    fetched=get_quotes(jwt,stk_toks+idx_toks)
     Q={}
     for q in fetched:
         t=q.get("symbolToken","")
@@ -376,14 +425,14 @@ def main():
         return round(float(c[-1][1]),2) if c else ltp(s)
 
     # ── INDEX DATA ────────────────────────────────────────────────────
-    nifty_ltp   = ltp("NIFTY50")
-    nifty_chg   = pct_chg("NIFTY50")
-    nifty_pts   = pts_chg("NIFTY50")
-    nifty_prev  = prev_close("NIFTY50")
-    fn_ltp      = ltp("FINNIFTY")
-    fn_chg      = pct_chg("FINNIFTY")
-    fn_pts      = pts_chg("FINNIFTY")
-    fn_prev     = prev_close("FINNIFTY")
+    nifty_ltp  = ltp("NIFTY50")
+    nifty_chg  = pct_chg("NIFTY50")
+    nifty_pts  = pts_chg("NIFTY50")
+    nifty_prev = prev_close("NIFTY50")
+    fn_ltp     = ltp("FINNIFTY")
+    fn_chg     = pct_chg("FINNIFTY")
+    fn_pts     = pts_chg("FINNIFTY")
+    fn_prev    = prev_close("FINNIFTY")
     print(f"Nifty: {nifty_ltp} | {nifty_chg}% | {nifty_pts}pts")
     print(f"FINNIFTY: {fn_ltp} | {fn_chg}% | {fn_pts}pts")
 
@@ -404,8 +453,10 @@ def main():
                     if cl:
                         if interval=="THIRTY_MINUTE":
                             c=cl[0]
-                            fn_orb["open"]=round(float(c[1]),2); fn_orb["high"]=round(float(c[2]),2)
-                            fn_orb["low"]=round(float(c[3]),2);  fn_orb["close"]=round(float(c[4]),2)
+                            fn_orb["open"]=round(float(c[1]),2)
+                            fn_orb["high"]=round(float(c[2]),2)
+                            fn_orb["low"]=round(float(c[3]),2)
+                            fn_orb["close"]=round(float(c[4]),2)
                         elif interval=="FIFTEEN_MINUTE":
                             c2=cl[:2]
                             fn_orb["open"]=round(float(c2[0][1]),2)
@@ -433,9 +484,26 @@ def main():
         fn_orb["ce_prem"]=round(fn_ltp*0.005,0)
         fn_orb["pe_prem"]=round(fn_ltp*0.0046,0)
 
+    # ── SECTORS ───────────────────────────────────────────────────────
+    sectors=[]
+    for sec,stks in SECTOR_STOCKS.items():
+        valid=[s for s in stks if ltp(s)>0]
+        if not valid: valid=stks[:1]
+        chgs=[pct_chg(s) for s in valid]
+        sec_chg=round(sum(chgs)/len(chgs),2) if chgs else 0.0
+        ldr=max(valid,key=lambda s:abs(pct_chg(s))) if valid else stks[0]
+        sectors.append({
+            "name":sec,"chg":sec_chg,"leader":ldr,
+            "leader_price":ltp(ldr),"leader_chg":pct_chg(ldr),
+            "stocks":[{"sym":s,"ltp":ltp(s),"chg":pct_chg(s)} for s in valid]
+        })
+        print(f"  Sector {sec}: {sec_chg}% | Leader: {ldr} {pct_chg(ldr)}%")
+    sectors.sort(key=lambda x:x["chg"],reverse=True)
+    print(f"Top: {sectors[0]['name']} {sectors[0]['chg']}% | Bot: {sectors[-1]['name']} {sectors[-1]['chg']}%")
+
     # ── CANDLES ───────────────────────────────────────────────────────
     to_d=ist.strftime("%Y-%m-%d %H:%M")
-    fr_d=(ist-timedelta(days=30)).strftime("%Y-%m-%d %H:%M")
+    fr_d=(ist-timedelta(days=60)).strftime("%Y-%m-%d %H:%M")
     candles={}
     print(f"\nFetching candles for {len(STOCKS)} stocks...")
     for i,(sym,info) in enumerate(STOCKS.items()):
@@ -445,13 +513,14 @@ def main():
                 candles[sym]=cd["data"]
             time.sleep(0.2)
         except: pass
-        if (i+1)%10==0: print(f"  Candles: {i+1}/{len(STOCKS)}")
-    print(f"Candles: {len(candles)}/{len(STOCKS)}")
+        if (i+1)%25==0: print(f"  Candles: {i+1}/{len(STOCKS)}")
+    print(f"Candles done: {len(candles)}/{len(STOCKS)}")
 
-    # ── ROCKERS SCAN — TOP 20 WITH SMART FILTERS ─────────────────────
+    # ── ROCKERS SCAN — ORIGINAL 6 CONDITIONS ─────────────────────────
+    top4=[s["name"] for s in sectors[:4]]
+    bot4=[s["name"] for s in sectors[-4:]]
     risk_amt=CAPITAL*RISK_PCT/100
-    candidates=[]
-    skipped=[]
+    longs=[]; shorts=[]; skipped=[]
 
     for sym,info in STOCKS.items():
         p=ltp(sym)
@@ -466,169 +535,117 @@ def main():
         if l<=0: l=p
         if op<=0: op=p
 
-        # ATR calculation
-        atr=atr_calc(c) if len(c)>14 else 0
-
-        # VWAP
         vwap_val=calc_vwap(c)
-
-        # First candle move % (how much stock already moved from open)
-        first_candle_pct=abs(h-op)/op*100 if op>0 else 0
-
-        # Gap % from prev close
-        prev=prev_close(sym)
-        gap_pct=abs(op-prev)/prev*100 if prev>0 else 0
-
-        # Indicators
         e20=ema(closes,20); r=rsi(closes); vr=vol_ratio(vols)
         macd_b=macd_bull(closes); st_b=st_bull(c)
-        vwap_long=p>vwap_val if vwap_val>0 else p>e20
-        vwap_short=p<vwap_val if vwap_val>0 else p<e20
 
-        # ── SMART FILTERS ─────────────────────────────────────────────
+        # ── 2 SIMPLE SMART FILTERS ONLY ───────────────────────────────
+        prev=prev_close(sym)
+        gap_pct=abs(op-prev)/prev*100 if prev>0 else 0
+        first_candle_pct=abs(h-op)/op*100 if op>0 else 0
         skip_reason=None
 
-        # Filter 1: Already moved too much in first candle
-        if first_candle_pct>1.0:
-            skip_reason=f"First candle moved {first_candle_pct:.1f}% — momentum used up"
-
-        # Filter 2: ATR too low (stock won't move enough)
-        elif atr>0 and atr<info["atr_min"]:
-            skip_reason=f"ATR ₹{atr:.0f} below minimum ₹{info['atr_min']} — not enough move"
-
-        # Filter 3: Gap too large (move already priced in)
-        elif gap_pct>2.0:
-            skip_reason=f"Gap {gap_pct:.1f}% at open — move already priced in"
-
-        # Filter 4: VIX too high — skip equity
-        elif vix_data["ltp"]>16:
-            skip_reason=f"VIX {vix_data['ltp']} > 16 — too risky for equity"
-
-        # Filter 5: Volume too low
-        elif vr<1.0:
-            skip_reason=f"Volume {vr}x below average — no participation"
+        if first_candle_pct>2.0:
+            skip_reason=f"First candle {first_candle_pct:.1f}% — already moved"
+        elif gap_pct>5.0:
+            skip_reason=f"Gap {gap_pct:.1f}% at open — results day, priced in"
 
         if skip_reason:
             skipped.append({
                 "sym":sym,"sec":info["sec"],"ltp":p,
-                "chg":pct_chg(sym),"reason":skip_reason,
-                "first_candle_pct":round(first_candle_pct,2),
-                "atr":atr,"gap_pct":round(gap_pct,2)
+                "chg":pct_chg(sym),"reason":skip_reason
             })
-            print(f"  SKIP {sym}: {skip_reason}")
             continue
 
-        # ── 6-CONDITION ROCKERS SCORE ──────────────────────────────────
-        # LONG conditions
-        long_conds={
-            "EMA20": p>e20,
-            "SUPERT": st_b,
-            "RSI": 50<=r<=70,
-            "MACD": macd_b,
-            "VOL": vr>=1.5,
-            "VWAP": vwap_long,
-        }
-        long_score=sum(long_conds.values())
-
-        # SHORT conditions
-        short_conds={
-            "EMA20": p<e20,
-            "SUPERT": not st_b,
-            "RSI": 30<=r<=50,
-            "MACD": not macd_b,
-            "VOL": vr>=1.5,
-            "VWAP": vwap_short,
-        }
-        short_score=sum(short_conds.values())
-
-        # ORB-based levels
-        orb_range=round(h-l,2)
-        orb_mid=round((h+l)/2,2)
-
-        if long_score>=4:
+        # ── ORIGINAL 6-CONDITION ROCKERS ──────────────────────────────
+        if info["sec"] in top4:
+            vwap_ok=p>vwap_val if vwap_val>0 else p>e20
+            conds={
+                "EMA20":  p>e20,
+                "SUPERT": st_b,
+                "RSI":    50<=r<=70,
+                "MACD":   macd_b,
+                "VOL":    vr>=1.5,
+                "VWAP":   vwap_ok,
+            }
+            sc=sum(conds.values())
+            orb_range=round(h-l,2)
+            orb_mid=round((h+l)/2,2)
             en=round(h+0.05,2)
             sl=round(orb_mid-0.05,2)
             rp=round(en-sl,2)
-            if rp>0:
-                t1=round(en+orb_range*0.5,2)
-                t2=round(en+orb_range*1.0,2)
-                qty=min(
-                    int((CAPITAL*MARGIN)/en),
-                    max(1,int(risk_amt/rp)*3)
-                )
-                candidates.append({
-                    "sym":sym,"sec":info["sec"],"side":"LONG",
-                    "ltp":p,"chg":pct_chg(sym),"prev":prev,
-                    "open":op,"high":h,"low":l,"vwap":vwap_val,
-                    "orb_high":h,"orb_low":l,"orb_mid":orb_mid,"orb_range":orb_range,
-                    "atr":atr,"first_candle_pct":round(first_candle_pct,2),
-                    "gap_pct":round(gap_pct,2),
-                    "score":long_score,"rsi":r,"vol_ratio":vr,
-                    "conds":{k:bool(v) for k,v in long_conds.items()},
-                    "entry":en,"sl":sl,"t1":t1,"t2":t2,
-                    "gtt_trigger":en,"gtt_limit":round(en+0.05,2),
-                    "sl_trigger":sl,"sl_limit":round(sl-0.05,2),
-                    "qty":qty,"risk_per_share":rp,
-                    "max_risk":round(rp*qty,0),
-                    "potential_profit":round((t1-en)*qty,0),
-                    "bias":bias,"vix":vix_data["ltp"],
-                    "phase":phase
-                })
+            if rp<=0: continue
+            t1=round(en+orb_range*0.5,2)
+            t2=round(en+orb_range*1.0,2)
+            qty=min(int((CAPITAL*MARGIN)/en),max(1,int(risk_amt/rp)*3))
+            longs.append({
+                "sym":sym,"sec":info["sec"],"ltp":p,"chg":pct_chg(sym),
+                "open":op,"high":h,"low":l,"vwap":vwap_val,
+                "orb_high":h,"orb_low":l,"orb_mid":orb_mid,"orb_range":orb_range,
+                "score":sc,"rsi":r,"vol_ratio":vr,
+                "conds":{k:bool(v) for k,v in conds.items()},
+                "entry":en,"sl":sl,"t1":t1,"t2":t2,
+                "gtt_trigger":en,"gtt_limit":round(en+0.05,2),
+                "sl_trigger":sl,"sl_limit":round(sl-0.05,2),
+                "qty":qty,"risk_per_share":rp,
+                "max_risk":round(rp*qty,0),
+                "potential_profit":round((t1-en)*qty,0),
+                "side":"LONG","bias":bias,"phase":phase
+            })
 
-        if short_score>=4:
+        if info["sec"] in bot4:
+            vwap_ok=p<vwap_val if vwap_val>0 else p<e20
+            conds={
+                "EMA20":  p<e20,
+                "SUPERT": not st_b,
+                "RSI":    30<=r<=50,
+                "MACD":   not macd_b,
+                "VOL":    vr>=1.5,
+                "VWAP":   vwap_ok,
+            }
+            sc=sum(conds.values())
+            orb_range=round(h-l,2)
+            orb_mid=round((h+l)/2,2)
             en=round(l-0.05,2)
             sl=round(orb_mid+0.05,2)
             rp=round(sl-en,2)
-            if rp>0:
-                t1=round(en-orb_range*0.5,2)
-                t2=round(en-orb_range*1.0,2)
-                qty=min(
-                    int((CAPITAL*MARGIN)/en),
-                    max(1,int(risk_amt/rp)*3)
-                )
-                candidates.append({
-                    "sym":sym,"sec":info["sec"],"side":"SHORT",
-                    "ltp":p,"chg":pct_chg(sym),"prev":prev,
-                    "open":op,"high":h,"low":l,"vwap":vwap_val,
-                    "orb_high":h,"orb_low":l,"orb_mid":orb_mid,"orb_range":orb_range,
-                    "atr":atr,"first_candle_pct":round(first_candle_pct,2),
-                    "gap_pct":round(gap_pct,2),
-                    "score":short_score,"rsi":r,"vol_ratio":vr,
-                    "conds":{k:bool(v) for k,v in short_conds.items()},
-                    "entry":en,"sl":sl,"t1":t1,"t2":t2,
-                    "gtt_trigger":en,"gtt_limit":round(en-0.05,2),
-                    "sl_trigger":sl,"sl_limit":round(sl+0.05,2),
-                    "qty":qty,"risk_per_share":rp,
-                    "max_risk":round(rp*qty,0),
-                    "potential_profit":round((en-t1)*qty,0),
-                    "bias":bias,"vix":vix_data["ltp"],
-                    "phase":phase
-                })
+            if rp<=0: continue
+            t1=round(en-orb_range*0.5,2)
+            t2=round(en-orb_range*1.0,2)
+            qty=min(int((CAPITAL*MARGIN)/en),max(1,int(risk_amt/rp)*3))
+            shorts.append({
+                "sym":sym,"sec":info["sec"],"ltp":p,"chg":pct_chg(sym),
+                "open":op,"high":h,"low":l,"vwap":vwap_val,
+                "orb_high":h,"orb_low":l,"orb_mid":orb_mid,"orb_range":orb_range,
+                "score":sc,"rsi":r,"vol_ratio":vr,
+                "conds":{k:bool(v) for k,v in conds.items()},
+                "entry":en,"sl":sl,"t1":t1,"t2":t2,
+                "gtt_trigger":en,"gtt_limit":round(en-0.05,2),
+                "sl_trigger":sl,"sl_limit":round(sl+0.05,2),
+                "qty":qty,"risk_per_share":rp,
+                "max_risk":round(rp*qty,0),
+                "potential_profit":round((en-t1)*qty,0),
+                "side":"SHORT","bias":bias,"phase":phase
+            })
 
-    # Sort by score descending
-    candidates.sort(key=lambda x:x["score"],reverse=True)
-
-    # Best 1 Long + 1 Short
-    longs  = [c for c in candidates if c["side"]=="LONG"]
-    shorts = [c for c in candidates if c["side"]=="SHORT"]
-
-    print(f"\nCandidates: {len(longs)} Long | {len(shorts)} Short")
-    print(f"Skipped: {len(skipped)} stocks")
-    print(f"Top Long: {longs[0]['sym'] if longs else 'None'}")
-    print(f"Top Short: {shorts[0]['sym'] if shorts else 'None'}")
-    print(f"Bias: {bias}")
+    longs.sort(key=lambda x:x["score"],reverse=True)
+    shorts.sort(key=lambda x:x["score"],reverse=True)
+    print(f"\nLongs: {len(longs)} | Shorts: {len(shorts)} | Skipped: {len(skipped)}")
+    print(f"Top 2 Long:  {[s['sym'] for s in longs[:2]]}")
+    print(f"Top 2 Short: {[s['sym'] for s in shorts[:2]]}")
+    print(f"Skipped: {[s['sym'] for s in skipped]}")
 
     # ── EXCEL ─────────────────────────────────────────────────────────
-    trade_signals=[{**s} for s in longs[:1]+shorts[:1]]
+    trade_signals=[{**s} for s in longs[:2]+shorts[:2]]
     if trade_signals:
         try: update_excel(trade_signals,ist)
         except Exception as e: print(f"Excel error: {e}")
 
     # ── SAVE DATA.JSON ────────────────────────────────────────────────
     data={
-        "generated_at": ist.strftime("%d %b %Y %I:%M %p IST"),
-        "phase": phase,
-        "phase_label": phase_label,
+        "generated_at":  ist.strftime("%d %b %Y %I:%M %p IST"),
+        "phase":         phase,
+        "phase_label":   phase_label,
         "market_status": "OPEN" if mkt_open else "CLOSED",
         "market":{
             "nifty50":{"ltp":nifty_ltp,"chg":nifty_chg,"pts":nifty_pts,"prev":nifty_prev},
@@ -638,13 +655,13 @@ def main():
         },
         "gift_nifty": gift,
         "pre_market":{
-            "analysis": f"Gift Nifty {gift['bias']}. {bias} bias. VIX {vix_data['ltp'] or 'N/A'}.",
-            "top_gainers": sorted([{"sym":s,"ltp":ltp(s),"chg":pct_chg(s),"sec":info["sec"]}
-                                   for s,info in STOCKS.items() if ltp(s)>0],
-                                  key=lambda x:x["chg"],reverse=True)[:3],
-            "top_losers":  sorted([{"sym":s,"ltp":ltp(s),"chg":pct_chg(s),"sec":info["sec"]}
-                                   for s,info in STOCKS.items() if ltp(s)>0],
-                                  key=lambda x:x["chg"])[:3],
+            "analysis":f"Gift Nifty {gift['bias']}. {bias} bias. VIX {vix_data['ltp'] or 'N/A'}.",
+            "top_gainers":sorted([{"sym":s,"ltp":ltp(s),"chg":pct_chg(s),"sec":STOCKS[s]["sec"]}
+                                  for s in STOCKS if ltp(s)>0],
+                                 key=lambda x:x["chg"],reverse=True)[:3],
+            "top_losers": sorted([{"sym":s,"ltp":ltp(s),"chg":pct_chg(s),"sec":STOCKS[s]["sec"]}
+                                  for s in STOCKS if ltp(s)>0],
+                                 key=lambda x:x["chg"])[:3],
         },
         "finnifty":{
             "ltp":fn_ltp,"chg":fn_chg,"pts":fn_pts,"prev":fn_prev,"atm":fn_atm,
@@ -657,36 +674,16 @@ def main():
             "pe_sl":round(fn_orb["pe_prem"]*0.7,0),
             "pe_tgt":round(fn_orb["pe_prem"]*1.5,0),
         },
-        "sectors": [
-            {"name":sec,"chg":round(sum(pct_chg(s) for s in stks if ltp(s)>0)/
-                                   max(1,len([s for s in stks if ltp(s)>0])),2),
-             "leader":max(stks,key=lambda s:abs(pct_chg(s)) if ltp(s)>0 else 0),
-             "leader_price":ltp(max(stks,key=lambda s:abs(pct_chg(s)) if ltp(s)>0 else 0)),
-             "leader_chg":pct_chg(max(stks,key=lambda s:abs(pct_chg(s)) if ltp(s)>0 else 0)),
-             "stocks":[{"sym":s,"ltp":ltp(s),"chg":pct_chg(s)} for s in stks if ltp(s)>0]}
-            for sec,stks in {
-                "BANKING":["HDFCBANK","ICICIBANK","AXISBANK","SBIN","KOTAKBANK"],
-                "IT":["INFY","TCS","WIPRO"],
-                "FINANCE":["BAJFINANCE"],
-                "AUTO":["MARUTI","MM"],
-                "PHARMA":["SUNPHARMA"],
-                "METAL":["TATASTEEL","JSWSTEEL"],
-                "ENERGY":["RELIANCE"],
-                "REALTY":["DLF"],
-                "INFRA":["LT","ADANIPORTS"],
-                "CONSUMER":["TITAN"],
-                "TELECOM":["BHARTIARTL"],
-            }.items()
-        ],
-        "rockers": candidates[:10],        # Top 10 for screener display
-        "long":    longs[:5],              # Top 5 longs for screener
-        "short":   shorts[:5],             # Top 5 shorts for screener
-        "trade_long":  longs[:1],          # BEST 1 LONG for GTT
-        "trade_short": shorts[:1],         # BEST 1 SHORT for GTT
-        "skipped": skipped[:5],            # Skipped with reasons
-        "capital":CAPITAL,"risk_pct":RISK_PCT,"risk_amt":risk_amt,
-        "universe": f"Top 20 F&O stocks",
-        "vix_value": vix_data["ltp"],
+        "sectors":    sectors,
+        "long":       longs[:5],
+        "short":      shorts[:5],
+        "trade_long":  longs[:2],
+        "trade_short": shorts[:2],
+        "skipped":    skipped[:10],
+        "capital":    CAPITAL,
+        "risk_pct":   RISK_PCT,
+        "risk_amt":   risk_amt,
+        "universe":   f"Nifty 100 — {len(STOCKS)} stocks",
     }
 
     with open("data.json","w") as f:
