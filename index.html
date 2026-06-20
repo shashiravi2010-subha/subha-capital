@@ -646,12 +646,17 @@ function render(d,ai){
     const isL=s.side==='LONG';
     const sc=isL?'var(--grn)':'var(--red)';
     const orbRange=s.orb_range||Math.abs((s.high||0)-(s.low||0));
-    return `<div class="stk" onclick="openChart('${s.sym}')" style="border-left:3px solid ${sc};background:linear-gradient(135deg,${isL?'rgba(0,212,160,0.05)':'rgba(255,69,96,0.05)'},var(--accent))">
+    const conf=s.confirmation||'PENDING';
+    const confCol=conf==='CONFIRMED'?'var(--grn)':conf==='REJECTED'?'var(--red)':'var(--gold)';
+    const confTxt=conf==='CONFIRMED'?'✅ 5-MIN CONFIRMED':conf==='REJECTED'?'❌ 5-MIN REJECTED':'⏳ AWAIT 9:35 AM';
+    const confBg=conf==='CONFIRMED'?'rgba(0,212,160,0.1)':conf==='REJECTED'?'rgba(255,69,96,0.1)':'rgba(240,165,0,0.1)';
+    return `<div class="stk" onclick="openChart('${s.sym}')" style="border-left:3px solid ${conf==='REJECTED'?'var(--mut)':sc};background:linear-gradient(135deg,${isL?'rgba(0,212,160,0.05)':'rgba(255,69,96,0.05)'},var(--accent))">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;flex-wrap:wrap;gap:6px">
         <div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <span style="font-family:JetBrains Mono,monospace;font-size:14px;font-weight:700;color:var(--gold)">${s.sym}</span>
             <span style="font-size:8px;padding:2px 7px;border-radius:6px;font-weight:700;background:${isL?'rgba(0,212,160,0.1)':'rgba(255,69,96,0.1)'};color:${sc};border:1px solid ${isL?'rgba(0,212,160,0.2)':'rgba(255,69,96,0.2)'}">${isL?'📈 LONG':'📉 SHORT'}</span>
+            <span style="font-size:8px;padding:2px 7px;border-radius:6px;font-weight:700;background:${confBg};color:${confCol};border:1px solid ${confCol}">${confTxt}</span>
           </div>
           <div style="font-size:8px;color:var(--mut);margin-top:2px;text-transform:uppercase;letter-spacing:1px">${s.sec} · ROCKERS ${s.score}/6 · VWAP ₹${s.vwap?fmt(s.vwap):'—'}</div>
         </div>
