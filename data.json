@@ -1,8 +1,8 @@
 {
-  "generated_at": "19 Jun 2026 08:00 PM IST",
-  "phase": "CLOSED",
-  "phase_label": "Market Closed \u2014 EOD Data",
-  "market_status": "CLOSED",
+  "generated_at": "20 Jun 2026 02:22 PM IST",
+  "phase": "ORB_945_PLUS",
+  "phase_label": "9:45 AM \u2014 FINNIFTY ORB Signal",
+  "market_status": "OPEN",
   "market": {
     "nifty50": {
       "ltp": 24013.1,
@@ -487,46 +487,6 @@
   ],
   "long": [
     {
-      "sym": "RECLTD",
-      "sec": "FINANCE",
-      "ltp": 375.9,
-      "chg": 1.43,
-      "open": 369.95,
-      "high": 377.25,
-      "low": 368.6,
-      "vwap": 361.44,
-      "orb_high": 377.25,
-      "orb_low": 368.6,
-      "orb_mid": 372.93,
-      "orb_range": 8.65,
-      "score": 6,
-      "rsi": 62,
-      "vol_ratio": 2.6,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": true,
-        "VWAP": true
-      },
-      "entry": 377.3,
-      "sl": 372.88,
-      "t1": 381.62,
-      "t2": 385.95,
-      "gtt_trigger": 377.3,
-      "gtt_limit": 377.35,
-      "sl_trigger": 372.88,
-      "sl_limit": 372.83,
-      "qty": 678,
-      "risk_per_share": 4.42,
-      "max_risk": 2997.0,
-      "potential_profit": 2929.0,
-      "side": "LONG",
-      "bias": "BEARISH",
-      "phase": "CLOSED"
-    },
-    {
       "sym": "CHOLAFIN",
       "sec": "FINANCE",
       "ltp": 1693.4,
@@ -562,9 +522,10 @@
       "risk_per_share": 13.9,
       "max_risk": 2961.0,
       "potential_profit": 2939.0,
+      "confirmation": "PENDING",
       "side": "LONG",
       "bias": "BEARISH",
-      "phase": "CLOSED"
+      "phase": "ORB_945_PLUS"
     },
     {
       "sym": "SHRIRAMFIN",
@@ -580,7 +541,7 @@
       "orb_mid": 1000.0,
       "orb_range": 15.4,
       "score": 5,
-      "rsi": 60,
+      "rsi": 59,
       "vol_ratio": 0.4,
       "conds": {
         "EMA20": true,
@@ -602,9 +563,10 @@
       "risk_per_share": 7.8,
       "max_risk": 2995.0,
       "potential_profit": 2957.0,
+      "confirmation": "PENDING",
       "side": "LONG",
       "bias": "BEARISH",
-      "phase": "CLOSED"
+      "phase": "ORB_945_PLUS"
     },
     {
       "sym": "SUNPHARMA",
@@ -620,7 +582,7 @@
       "orb_mid": 1831.8,
       "orb_range": 21.8,
       "score": 5,
-      "rsi": 62,
+      "rsi": 63,
       "vol_ratio": 0.5,
       "conds": {
         "EMA20": true,
@@ -642,9 +604,10 @@
       "risk_per_share": 11.0,
       "max_risk": 2970.0,
       "potential_profit": 2943.0,
+      "confirmation": "PENDING",
       "side": "LONG",
       "bias": "BEARISH",
-      "phase": "CLOSED"
+      "phase": "ORB_945_PLUS"
     },
     {
       "sym": "TITAN",
@@ -682,9 +645,51 @@
       "risk_per_share": 40.95,
       "max_risk": 2948.0,
       "potential_profit": 2941.0,
+      "confirmation": "PENDING",
       "side": "LONG",
       "bias": "BEARISH",
-      "phase": "CLOSED"
+      "phase": "ORB_945_PLUS"
+    },
+    {
+      "sym": "DMART",
+      "sec": "CONSUMER",
+      "ltp": 39975.0,
+      "chg": -0.51,
+      "open": 40000.0,
+      "high": 40480.0,
+      "low": 39545.0,
+      "vwap": 38840.46,
+      "orb_high": 40480.0,
+      "orb_low": 39545.0,
+      "orb_mid": 40012.5,
+      "orb_range": 935.0,
+      "score": 5,
+      "rsi": 62,
+      "vol_ratio": 3.2,
+      "conds": {
+        "EMA20": true,
+        "SUPERT": false,
+        "RSI": true,
+        "MACD": true,
+        "VOL": true,
+        "VWAP": true
+      },
+      "entry": 40480.05,
+      "sl": 40012.45,
+      "t1": 40947.55,
+      "t2": 41415.05,
+      "gtt_trigger": 40480.05,
+      "gtt_limit": 40480.1,
+      "sl_trigger": 40012.45,
+      "sl_limit": 40012.4,
+      "qty": 6,
+      "risk_per_share": 467.6,
+      "max_risk": 2806.0,
+      "potential_profit": 2805.0,
+      "confirmation": "PENDING",
+      "side": "LONG",
+      "bias": "BEARISH",
+      "phase": "ORB_945_PLUS"
     }
   ],
   "short": [
@@ -703,7 +708,7 @@
       "orb_range": 78.1,
       "score": 5,
       "rsi": 35,
-      "vol_ratio": 2.8,
+      "vol_ratio": 2.7,
       "conds": {
         "EMA20": true,
         "SUPERT": false,
@@ -724,9 +729,10 @@
       "risk_per_share": 39.15,
       "max_risk": 2936.0,
       "potential_profit": 2929.0,
+      "confirmation": "PENDING",
       "side": "SHORT",
       "bias": "BEARISH",
-      "phase": "CLOSED"
+      "phase": "ORB_945_PLUS"
     },
     {
       "sym": "LTIM",
@@ -742,7 +748,7 @@
       "orb_mid": 3799.0,
       "orb_range": 86.0,
       "score": 5,
-      "rsi": 37,
+      "rsi": 38,
       "vol_ratio": 2.1,
       "conds": {
         "EMA20": true,
@@ -764,9 +770,10 @@
       "risk_per_share": 43.1,
       "max_risk": 2974.0,
       "potential_profit": 2967.0,
+      "confirmation": "PENDING",
       "side": "SHORT",
       "bias": "BEARISH",
-      "phase": "CLOSED"
+      "phase": "ORB_945_PLUS"
     },
     {
       "sym": "BAJAJ-AUTO",
@@ -782,7 +789,7 @@
       "orb_mid": 10035.0,
       "orb_range": 198.0,
       "score": 5,
-      "rsi": 46,
+      "rsi": 47,
       "vol_ratio": 1.9,
       "conds": {
         "EMA20": true,
@@ -804,9 +811,10 @@
       "risk_per_share": 99.1,
       "max_risk": 2973.0,
       "potential_profit": 2970.0,
+      "confirmation": "CONFIRMED",
       "side": "SHORT",
       "bias": "BEARISH",
-      "phase": "CLOSED"
+      "phase": "ORB_945_PLUS"
     },
     {
       "sym": "AMBUJACEM",
@@ -844,9 +852,10 @@
       "risk_per_share": 5.7,
       "max_risk": 2992.0,
       "potential_profit": 2940.0,
+      "confirmation": "CONFIRMED",
       "side": "SHORT",
       "bias": "BEARISH",
-      "phase": "CLOSED"
+      "phase": "ORB_945_PLUS"
     },
     {
       "sym": "MM",
@@ -862,8 +871,8 @@
       "orb_mid": 3094.5,
       "orb_range": 71.0,
       "score": 4,
-      "rsi": 48,
-      "vol_ratio": 1.1,
+      "rsi": 50,
+      "vol_ratio": 1.0,
       "conds": {
         "EMA20": true,
         "SUPERT": true,
@@ -884,52 +893,13 @@
       "risk_per_share": 35.6,
       "max_risk": 2990.0,
       "potential_profit": 2982.0,
+      "confirmation": "CONFIRMED",
       "side": "SHORT",
       "bias": "BEARISH",
-      "phase": "CLOSED"
+      "phase": "ORB_945_PLUS"
     }
   ],
   "trade_long": [
-    {
-      "sym": "RECLTD",
-      "sec": "FINANCE",
-      "ltp": 375.9,
-      "chg": 1.43,
-      "open": 369.95,
-      "high": 377.25,
-      "low": 368.6,
-      "vwap": 361.44,
-      "orb_high": 377.25,
-      "orb_low": 368.6,
-      "orb_mid": 372.93,
-      "orb_range": 8.65,
-      "score": 6,
-      "rsi": 62,
-      "vol_ratio": 2.6,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": true,
-        "VWAP": true
-      },
-      "entry": 377.3,
-      "sl": 372.88,
-      "t1": 381.62,
-      "t2": 385.95,
-      "gtt_trigger": 377.3,
-      "gtt_limit": 377.35,
-      "sl_trigger": 372.88,
-      "sl_limit": 372.83,
-      "qty": 678,
-      "risk_per_share": 4.42,
-      "max_risk": 2997.0,
-      "potential_profit": 2929.0,
-      "side": "LONG",
-      "bias": "BEARISH",
-      "phase": "CLOSED"
-    },
     {
       "sym": "CHOLAFIN",
       "sec": "FINANCE",
@@ -966,9 +936,51 @@
       "risk_per_share": 13.9,
       "max_risk": 2961.0,
       "potential_profit": 2939.0,
+      "confirmation": "PENDING",
       "side": "LONG",
       "bias": "BEARISH",
-      "phase": "CLOSED"
+      "phase": "ORB_945_PLUS"
+    },
+    {
+      "sym": "SHRIRAMFIN",
+      "sec": "FINANCE",
+      "ltp": 1001.9,
+      "chg": -0.08,
+      "open": 1001.65,
+      "high": 1007.7,
+      "low": 992.3,
+      "vwap": 945.04,
+      "orb_high": 1007.7,
+      "orb_low": 992.3,
+      "orb_mid": 1000.0,
+      "orb_range": 15.4,
+      "score": 5,
+      "rsi": 59,
+      "vol_ratio": 0.4,
+      "conds": {
+        "EMA20": true,
+        "SUPERT": true,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "VWAP": true
+      },
+      "entry": 1007.75,
+      "sl": 999.95,
+      "t1": 1015.45,
+      "t2": 1023.15,
+      "gtt_trigger": 1007.75,
+      "gtt_limit": 1007.8,
+      "sl_trigger": 999.95,
+      "sl_limit": 999.9,
+      "qty": 384,
+      "risk_per_share": 7.8,
+      "max_risk": 2995.0,
+      "potential_profit": 2957.0,
+      "confirmation": "PENDING",
+      "side": "LONG",
+      "bias": "BEARISH",
+      "phase": "ORB_945_PLUS"
     }
   ],
   "trade_short": [
@@ -987,7 +999,7 @@
       "orb_range": 78.1,
       "score": 5,
       "rsi": 35,
-      "vol_ratio": 2.8,
+      "vol_ratio": 2.7,
       "conds": {
         "EMA20": true,
         "SUPERT": false,
@@ -1008,9 +1020,10 @@
       "risk_per_share": 39.15,
       "max_risk": 2936.0,
       "potential_profit": 2929.0,
+      "confirmation": "PENDING",
       "side": "SHORT",
       "bias": "BEARISH",
-      "phase": "CLOSED"
+      "phase": "ORB_945_PLUS"
     },
     {
       "sym": "LTIM",
@@ -1026,7 +1039,7 @@
       "orb_mid": 3799.0,
       "orb_range": 86.0,
       "score": 5,
-      "rsi": 37,
+      "rsi": 38,
       "vol_ratio": 2.1,
       "conds": {
         "EMA20": true,
@@ -1048,12 +1061,27 @@
       "risk_per_share": 43.1,
       "max_risk": 2974.0,
       "potential_profit": 2967.0,
+      "confirmation": "PENDING",
       "side": "SHORT",
       "bias": "BEARISH",
-      "phase": "CLOSED"
+      "phase": "ORB_945_PLUS"
     }
   ],
   "skipped": [
+    {
+      "sym": "BAJAJFINSV",
+      "sec": "FINANCE",
+      "ltp": 1769.4,
+      "chg": -0.13,
+      "reason": "5-min candle rejected LONG \u2014 closed below ORB low"
+    },
+    {
+      "sym": "RECLTD",
+      "sec": "FINANCE",
+      "ltp": 375.9,
+      "chg": 1.43,
+      "reason": "5-min candle rejected LONG \u2014 closed below ORB low"
+    },
     {
       "sym": "INFY",
       "sec": "IT",
@@ -1109,20 +1137,6 @@
       "ltp": 9638.5,
       "chg": 2.54,
       "reason": "First candle 5.4% \u2014 already moved"
-    },
-    {
-      "sym": "AUROPHARMA",
-      "sec": "PHARMA",
-      "ltp": 1497.8,
-      "chg": 3.75,
-      "reason": "First candle 3.4% \u2014 already moved"
-    },
-    {
-      "sym": "BHEL",
-      "sec": "INFRA",
-      "ltp": 414.35,
-      "chg": 2.08,
-      "reason": "First candle 4.4% \u2014 already moved"
     }
   ],
   "capital": 100000,
