@@ -501,11 +501,11 @@ def main():
     sectors.sort(key=lambda x:x["chg"],reverse=True)
     print(f"Top: {sectors[0]['name']} {sectors[0]['chg']}% | Bot: {sectors[-1]['name']} {sectors[-1]['chg']}%")
 
-    # ── CANDLES ───────────────────────────────────────────────────────
+    # ── CANDLES (DAILY) ───────────────────────────────────────────────
     to_d=ist.strftime("%Y-%m-%d %H:%M")
     fr_d=(ist-timedelta(days=60)).strftime("%Y-%m-%d %H:%M")
     candles={}
-    print(f"\nFetching candles for {len(STOCKS)} stocks...")
+    print(f"\nFetching daily candles for {len(STOCKS)} stocks...")
     for i,(sym,info) in enumerate(STOCKS.items()):
         try:
             cd=get_candles(jwt,info["token"],"ONE_DAY",fr_d,to_d)
@@ -514,13 +514,74 @@ def main():
             time.sleep(0.2)
         except: pass
         if (i+1)%25==0: print(f"  Candles: {i+1}/{len(STOCKS)}")
-    print(f"Candles done: {len(candles)}/{len(STOCKS)}")
+    print(f"Daily candles: {len(candles)}/{len(STOCKS)}")
 
-    # ── ROCKERS SCAN — ORIGINAL 6 CONDITIONS ─────────────────────────
+    # ── 5-MIN CANDLES FOR ORB CONFIRMATION ───────────────────────────
+    # Fetch only during/after market hours for top candidates
+    five_min_candles={}
+    today=ist.strftime("%Y-%m-%d")
+    if phase in ["ORB_930","ORB_945_PLUS","CLOSED"]:
+        print(f"\nFetching 5-min candles for ORB confirmation...")
+        for i,(sym,info) in enumerate(STOCKS.items()):
+            try:
+                cd=get_candles(jwt,info["token"],"FIVE_MINUTE",
+                               f"{today} 09:15",f"{today} 10:00")
+                if cd.get("status") and cd.get("data"):
+                    five_min_candles[sym]=cd["data"]
+                time.sleep(0.2)
+            except: pass
+            if (i+1)%25==0: print(f"  5-min: {i+1}/{len(STOCKS)}")
+        print(f"5-min candles: {len(five_min_candles)}/{len(STOCKS)}")
+
+    # ── ROCKERS SCAN — ORIGINAL 6 CONDITIONS + 5-MIN CONFIRMATION ────
     top4=[s["name"] for s in sectors[:4]]
     bot4=[s["name"] for s in sectors[-4:]]
     risk_amt=CAPITAL*RISK_PCT/100
     longs=[]; shorts=[]; skipped=[]
+
+    def get_5min_confirmation(sym, orb_high, orb_low, direction):
+        """
+        5-min candle confirmation after 9:30 AM ORB
+        
+        LONG:  9:35 AM candle closes ABOVE ORB High = confirmed
+        SHORT: 9:35 AM candle closes BELOW ORB Low  = confirmed
+        
+        Returns: "CONFIRMED", "REJECTED", "PENDING" (no data yet)
+        """
+        fm=five_min_candles.get(sym,[])
+        if not fm:
+            return "PENDING"  # No 5-min data = pre-market or data unavailable
+
+        # Find the 9:35 AM candle (2nd 5-min candle of the day)
+        # Index 0 = 9:15-9:20, Index 1 = 9:20-9:25, Index 2 = 9:25-9:30
+        # Index 3 = 9:30-9:35 ← ORB candle
+        # Index 4 = 9:35-9:40 ← confirmation candle
+        confirm_candle = fm[4] if len(fm)>4 else fm[-1] if fm else None
+
+        if not confirm_candle:
+            return "PENDING"
+
+        c_close = float(confirm_candle[4])
+        c_high  = float(confirm_candle[2])
+        c_low   = float(confirm_candle[3])
+
+        if direction=="LONG":
+            if c_close > orb_high:
+                return "CONFIRMED"  # 9:35 candle closed above ORB high ✅
+            elif c_close < orb_low:
+                return "REJECTED"   # 9:35 candle closed below ORB low ❌
+            else:
+                return "PENDING"    # Still inside ORB range — wait
+
+        elif direction=="SHORT":
+            if c_close < orb_low:
+                return "CONFIRMED"  # 9:35 candle closed below ORB low ✅
+            elif c_close > orb_high:
+                return "REJECTED"   # 9:35 candle closed above ORB high ❌
+            else:
+                return "PENDING"    # Still inside ORB range — wait
+
+        return "PENDING"
 
     for sym,info in STOCKS.items():
         p=ltp(sym)
@@ -578,6 +639,20 @@ def main():
             t1=round(en+orb_range*0.5,2)
             t2=round(en+orb_range*1.0,2)
             qty=min(int((CAPITAL*MARGIN)/en),max(1,int(risk_amt/rp)*3))
+
+            # 5-min confirmation
+            confirm=get_5min_confirmation(sym,h,l,"LONG")
+
+            # Skip if 5-min candle REJECTED the long signal
+            if confirm=="REJECTED":
+                skipped.append({
+                    "sym":sym,"sec":info["sec"],"ltp":p,
+                    "chg":pct_chg(sym),
+                    "reason":f"5-min candle rejected LONG — closed below ORB low"
+                })
+                print(f"  SKIP {sym}: 5-min rejected LONG")
+                continue
+
             longs.append({
                 "sym":sym,"sec":info["sec"],"ltp":p,"chg":pct_chg(sym),
                 "open":op,"high":h,"low":l,"vwap":vwap_val,
@@ -590,6 +665,7 @@ def main():
                 "qty":qty,"risk_per_share":rp,
                 "max_risk":round(rp*qty,0),
                 "potential_profit":round((t1-en)*qty,0),
+                "confirmation":confirm,
                 "side":"LONG","bias":bias,"phase":phase
             })
 
@@ -613,6 +689,20 @@ def main():
             t1=round(en-orb_range*0.5,2)
             t2=round(en-orb_range*1.0,2)
             qty=min(int((CAPITAL*MARGIN)/en),max(1,int(risk_amt/rp)*3))
+
+            # 5-min confirmation
+            confirm=get_5min_confirmation(sym,h,l,"SHORT")
+
+            # Skip if 5-min candle REJECTED the short signal
+            if confirm=="REJECTED":
+                skipped.append({
+                    "sym":sym,"sec":info["sec"],"ltp":p,
+                    "chg":pct_chg(sym),
+                    "reason":f"5-min candle rejected SHORT — closed above ORB high"
+                })
+                print(f"  SKIP {sym}: 5-min rejected SHORT")
+                continue
+
             shorts.append({
                 "sym":sym,"sec":info["sec"],"ltp":p,"chg":pct_chg(sym),
                 "open":op,"high":h,"low":l,"vwap":vwap_val,
@@ -625,6 +715,7 @@ def main():
                 "qty":qty,"risk_per_share":rp,
                 "max_risk":round(rp*qty,0),
                 "potential_profit":round((en-t1)*qty,0),
+                "confirmation":confirm,
                 "side":"SHORT","bias":bias,"phase":phase
             })
 
