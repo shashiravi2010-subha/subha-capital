@@ -1,59 +1,53 @@
 {
-  "generated_at": "18 Nov 2026 06:29 PM IST",
+  "generated_at": "19 Nov 2026 05:13 PM IST",
   "phase": "CLOSED",
   "phase_label": "Market Closed \u2014 EOD Data",
   "market_status": "CLOSED",
   "market": {
     "nifty50": {
-      "ltp": 25227.95,
-      "chg": -0.63,
-      "pts": -159.45,
-      "prev": 25387.4
+      "ltp": 25514.3,
+      "chg": 1.14,
+      "pts": 286.35,
+      "prev": 25227.95
     },
     "vix": {
-      "ltp": 15.52,
-      "chg": 15.52,
+      "ltp": 16.11,
+      "chg": 16.11,
       "prev": 0.0,
-      "status": "13-16 CAUTION",
+      "status": ">16 HIGH RISK",
       "source": "Yahoo"
     },
-    "bias": "BEARISH"
+    "bias": "BULLISH"
   },
   "gift_nifty": {
-    "ltp": 25227.95,
-    "chg": -0.25,
-    "bias": "SLIGHT GAP DOWN",
+    "ltp": 25514.3,
+    "chg": 0.5,
+    "bias": "SLIGHT GAP UP",
     "source": "^NSEI"
   },
   "pre_market": {
-    "analysis": "Gift Nifty SLIGHT GAP DOWN. BEARISH bias. VIX 15.52.",
+    "analysis": "Gift Nifty SLIGHT GAP UP. BULLISH bias. VIX 16.11.",
     "top_gainers": [
       {
-        "sym": "SBIN",
-        "ltp": 1135.0,
-        "chg": 2.38,
-        "sec": "BANKING"
+        "sym": "VOLTAS",
+        "ltp": 1237.0,
+        "chg": 9.03,
+        "sec": "CONSUMER"
       },
       {
-        "sym": "CIPLA",
-        "ltp": 1417.0,
-        "chg": 2.09,
-        "sec": "PHARMA"
+        "sym": "MARUTI",
+        "ltp": 13589.0,
+        "chg": 7.58,
+        "sec": "AUTO"
       },
       {
-        "sym": "ASHOKLEY",
-        "ltp": 162.45,
-        "chg": 1.21,
+        "sym": "HEROMOTOCO",
+        "ltp": 5556.0,
+        "chg": 5.77,
         "sec": "AUTO"
       }
     ],
     "top_losers": [
-      {
-        "sym": "TITAN",
-        "ltp": 4648.1,
-        "chg": -5.3,
-        "sec": "CONSUMER"
-      },
       {
         "sym": "ICICIPRULI",
         "ltp": 96.09,
@@ -61,776 +55,452 @@
         "sec": "FINANCE"
       },
       {
-        "sym": "VEDL",
-        "ltp": 245.4,
-        "chg": -3.78,
-        "sec": "METAL"
+        "sym": "HAVELLS",
+        "ltp": 231.1,
+        "chg": -1.87,
+        "sec": "CONSUMER"
+      },
+      {
+        "sym": "MPHASIS",
+        "ltp": 2356.0,
+        "chg": -1.71,
+        "sec": "IT"
       }
     ]
   },
   "finnifty": {
-    "ltp": 27992.25,
-    "chg": -0.72,
-    "pts": -202.75,
-    "prev": 28195.0,
-    "atm": 28000,
+    "ltp": 28299.65,
+    "chg": 1.1,
+    "pts": 307.4,
+    "prev": 27992.25,
+    "atm": 28300,
     "orb_open": 0,
     "orb_high": 0,
     "orb_low": 0,
     "orb_close": 0,
     "signal": "WAIT",
-    "ce_premium": 140.0,
-    "pe_premium": 129.0,
-    "ce_sl": 98.0,
-    "ce_tgt": 210.0,
-    "pe_sl": 90.0,
-    "pe_tgt": 194.0
+    "ce_premium": 141.0,
+    "pe_premium": 130.0,
+    "ce_sl": 99.0,
+    "ce_tgt": 212.0,
+    "pe_sl": 91.0,
+    "pe_tgt": 195.0
   },
   "sectors": [
     {
-      "name": "PHARMA",
-      "chg": 0.42,
-      "leader": "CIPLA",
-      "leader_price": 1417.0,
-      "leader_chg": 2.09,
+      "name": "AUTO",
+      "chg": 4.9,
+      "leader": "MARUTI",
+      "leader_price": 13589.0,
+      "leader_chg": 7.58,
       "stocks": [
         {
-          "sym": "SUNPHARMA",
-          "ltp": 1871.5,
-          "chg": 0.08
+          "sym": "MARUTI",
+          "ltp": 13589.0,
+          "chg": 7.58
         },
         {
-          "sym": "DRREDDY",
-          "ltp": 1398.2,
-          "chg": 0.73
+          "sym": "MM",
+          "ltp": 3509.0,
+          "chg": 4.46
         },
         {
-          "sym": "CIPLA",
-          "ltp": 1417.0,
-          "chg": 2.09
+          "sym": "TATAMOTORS",
+          "ltp": 263.5,
+          "chg": 4.34
         },
         {
-          "sym": "DIVISLAB",
-          "ltp": 11049.0,
-          "chg": -0.91
+          "sym": "BAJAJ-AUTO",
+          "ltp": 10817.0,
+          "chg": 2.34
         },
         {
-          "sym": "AUROPHARMA",
-          "ltp": 1796.3,
-          "chg": 0.12
-        }
-      ]
-    },
-    {
-      "name": "ENERGY",
-      "chg": 0.05,
-      "leader": "ONGC",
-      "leader_price": 225.0,
-      "leader_chg": 0.66,
-      "stocks": [
-        {
-          "sym": "RELIANCE",
-          "ltp": 1363.0,
-          "chg": -0.29
-        },
-        {
-          "sym": "ONGC",
-          "ltp": 225.0,
-          "chg": 0.66
-        },
-        {
-          "sym": "BPCL",
-          "ltp": 305.5,
-          "chg": -0.1
-        },
-        {
-          "sym": "NTPC",
-          "ltp": 320.4,
-          "chg": -0.44
-        },
-        {
-          "sym": "POWERGRID",
-          "ltp": 259.1,
-          "chg": 0.43
-        }
-      ]
-    },
-    {
-      "name": "CEMENT",
-      "chg": -0.01,
-      "leader": "AMBUJACEM",
-      "leader_price": 384.8,
-      "leader_chg": -1.38,
-      "stocks": [
-        {
-          "sym": "ULTRACEMCO",
-          "ltp": 12428.0,
-          "chg": 1.12
-        },
-        {
-          "sym": "GRASIM",
-          "ltp": 3062.0,
-          "chg": 0.24
-        },
-        {
-          "sym": "AMBUJACEM",
-          "ltp": 384.8,
-          "chg": -1.38
-        }
-      ]
-    },
-    {
-      "name": "REALTY",
-      "chg": -0.22,
-      "leader": "DLF",
-      "leader_price": 764.3,
-      "leader_chg": -0.22,
-      "stocks": [
-        {
-          "sym": "DLF",
-          "ltp": 764.3,
-          "chg": -0.22
-        }
-      ]
-    },
-    {
-      "name": "BANKING",
-      "chg": -0.25,
-      "leader": "SBIN",
-      "leader_price": 1135.0,
-      "leader_chg": 2.38,
-      "stocks": [
-        {
-          "sym": "HDFCBANK",
-          "ltp": 808.15,
-          "chg": -0.83
-        },
-        {
-          "sym": "ICICIBANK",
-          "ltp": 1601.3,
-          "chg": 0.16
-        },
-        {
-          "sym": "SBIN",
-          "ltp": 1135.0,
-          "chg": 2.38
-        },
-        {
-          "sym": "AXISBANK",
-          "ltp": 1360.0,
-          "chg": -0.66
-        },
-        {
-          "sym": "KOTAKBANK",
-          "ltp": 494.85,
-          "chg": -0.48
-        },
-        {
-          "sym": "INDUSINDBK",
-          "ltp": 911.85,
-          "chg": -2.06
-        }
-      ]
-    },
-    {
-      "name": "TELECOM",
-      "chg": -0.29,
-      "leader": "BHARTIARTL",
-      "leader_price": 2132.0,
-      "leader_chg": -0.29,
-      "stocks": [
-        {
-          "sym": "BHARTIARTL",
-          "ltp": 2132.0,
-          "chg": -0.29
+          "sym": "HEROMOTOCO",
+          "ltp": 5556.0,
+          "chg": 5.77
         }
       ]
     },
     {
       "name": "FMCG",
-      "chg": -0.51,
-      "leader": "DABUR",
-      "leader_price": 379.25,
-      "leader_chg": -1.31,
+      "chg": 2.89,
+      "leader": "BRITANNIA",
+      "leader_price": 4868.0,
+      "leader_chg": 4.17,
       "stocks": [
         {
           "sym": "HINDUNILVR",
-          "ltp": 1993.0,
-          "chg": -0.84
+          "ltp": 2074.2,
+          "chg": 4.07
         },
         {
           "sym": "ITC",
-          "ltp": 296.6,
-          "chg": 1.13
+          "ltp": 301.0,
+          "chg": 1.48
         },
         {
           "sym": "BRITANNIA",
-          "ltp": 4673.2,
-          "chg": -0.57
+          "ltp": 4868.0,
+          "chg": 4.17
         },
         {
           "sym": "NESTLEIND",
-          "ltp": 1281.6,
-          "chg": -0.98
+          "ltp": 1303.4,
+          "chg": 1.7
         },
         {
           "sym": "DABUR",
-          "ltp": 379.25,
-          "chg": -1.31
+          "ltp": 390.65,
+          "chg": 3.01
+        }
+      ]
+    },
+    {
+      "name": "CEMENT",
+      "chg": 1.93,
+      "leader": "AMBUJACEM",
+      "leader_price": 396.8,
+      "leader_chg": 3.12,
+      "stocks": [
+        {
+          "sym": "ULTRACEMCO",
+          "ltp": 12560.0,
+          "chg": 1.06
+        },
+        {
+          "sym": "GRASIM",
+          "ltp": 3111.1,
+          "chg": 1.6
+        },
+        {
+          "sym": "AMBUJACEM",
+          "ltp": 396.8,
+          "chg": 3.12
         }
       ]
     },
     {
       "name": "INFRA",
-      "chg": -0.92,
+      "chg": 1.82,
       "leader": "BHEL",
-      "leader_price": 421.7,
-      "leader_chg": -2.08,
+      "leader_price": 435.0,
+      "leader_chg": 3.15,
       "stocks": [
         {
           "sym": "LT",
-          "ltp": 4159.0,
-          "chg": 0.08
+          "ltp": 4211.0,
+          "chg": 1.25
         },
         {
           "sym": "ADANIPORTS",
-          "ltp": 1902.6,
-          "chg": -0.75
+          "ltp": 1917.1,
+          "chg": 0.76
         },
         {
           "sym": "BEL",
-          "ltp": 395.8,
-          "chg": -0.94
+          "ltp": 404.2,
+          "chg": 2.12
         },
         {
           "sym": "BHEL",
-          "ltp": 421.7,
-          "chg": -2.08
+          "ltp": 435.0,
+          "chg": 3.15
+        }
+      ]
+    },
+    {
+      "name": "BANKING",
+      "chg": 1.41,
+      "leader": "SBIN",
+      "leader_price": 1156.0,
+      "leader_chg": 1.85,
+      "stocks": [
+        {
+          "sym": "HDFCBANK",
+          "ltp": 821.8,
+          "chg": 1.69
+        },
+        {
+          "sym": "ICICIBANK",
+          "ltp": 1608.9,
+          "chg": 0.47
+        },
+        {
+          "sym": "SBIN",
+          "ltp": 1156.0,
+          "chg": 1.85
+        },
+        {
+          "sym": "AXISBANK",
+          "ltp": 1380.8,
+          "chg": 1.53
+        },
+        {
+          "sym": "KOTAKBANK",
+          "ltp": 503.0,
+          "chg": 1.65
+        },
+        {
+          "sym": "INDUSINDBK",
+          "ltp": 923.65,
+          "chg": 1.29
         }
       ]
     },
     {
       "name": "FINANCE",
-      "chg": -0.97,
-      "leader": "BAJFINANCE",
-      "leader_price": 1093.85,
-      "leader_chg": -2.43,
+      "chg": 1.02,
+      "leader": "PFC",
+      "leader_price": 331.6,
+      "leader_chg": 2.49,
       "stocks": [
         {
           "sym": "BAJFINANCE",
-          "ltp": 1093.85,
-          "chg": -2.43
+          "ltp": 1092.85,
+          "chg": -0.09
         },
         {
           "sym": "BAJAJFINSV",
-          "ltp": 1856.2,
-          "chg": -0.78
+          "ltp": 1885.0,
+          "chg": 1.55
         },
         {
           "sym": "CHOLAFIN",
           "ltp": 1875.0,
-          "chg": -0.51
+          "chg": 0.0
         },
         {
           "sym": "PFC",
-          "ltp": 323.55,
-          "chg": -1.36
+          "ltp": 331.6,
+          "chg": 2.49
         },
         {
           "sym": "RECLTD",
-          "ltp": 412.4,
-          "chg": 0.22
+          "ltp": 417.05,
+          "chg": 1.13
         }
       ]
     },
     {
-      "name": "IT",
-      "chg": -1.34,
-      "leader": "WIPRO",
-      "leader_price": 185.14,
-      "leader_chg": -2.5,
+      "name": "ENERGY",
+      "chg": 1.02,
+      "leader": "POWERGRID",
+      "leader_price": 264.5,
+      "leader_chg": 2.08,
       "stocks": [
         {
-          "sym": "INFY",
-          "ltp": 1108.8,
-          "chg": -1.88
+          "sym": "RELIANCE",
+          "ltp": 1375.6,
+          "chg": 0.92
         },
         {
-          "sym": "TCS",
-          "ltp": 2379.5,
-          "chg": -1.13
+          "sym": "ONGC",
+          "ltp": 224.52,
+          "chg": -0.21
         },
         {
-          "sym": "WIPRO",
-          "ltp": 185.14,
-          "chg": -2.5
+          "sym": "BPCL",
+          "ltp": 308.1,
+          "chg": 0.85
         },
         {
-          "sym": "HCLTECH",
-          "ltp": 1344.7,
-          "chg": -0.81
+          "sym": "NTPC",
+          "ltp": 325.0,
+          "chg": 1.44
         },
         {
-          "sym": "TECHM",
-          "ltp": 1750.0,
-          "chg": -0.68
-        },
-        {
-          "sym": "LTIM",
-          "ltp": 4075.0,
-          "chg": -1.04
-        }
-      ]
-    },
-    {
-      "name": "AUTO",
-      "chg": -1.39,
-      "leader": "TATAMOTORS",
-      "leader_price": 252.55,
-      "leader_chg": -2.57,
-      "stocks": [
-        {
-          "sym": "MARUTI",
-          "ltp": 12632.0,
-          "chg": 0.06
-        },
-        {
-          "sym": "MM",
-          "ltp": 3359.1,
-          "chg": -1.17
-        },
-        {
-          "sym": "TATAMOTORS",
-          "ltp": 252.55,
-          "chg": -2.57
-        },
-        {
-          "sym": "BAJAJ-AUTO",
-          "ltp": 10570.0,
-          "chg": -1.86
-        },
-        {
-          "sym": "HEROMOTOCO",
-          "ltp": 5253.0,
-          "chg": -1.43
+          "sym": "POWERGRID",
+          "ltp": 264.5,
+          "chg": 2.08
         }
       ]
     },
     {
       "name": "METAL",
-      "chg": -2.05,
-      "leader": "VEDL",
-      "leader_price": 245.4,
-      "leader_chg": -3.78,
+      "chg": 0.79,
+      "leader": "JSWSTEEL",
+      "leader_price": 1336.8,
+      "leader_chg": 1.59,
       "stocks": [
         {
           "sym": "TATASTEEL",
-          "ltp": 179.0,
-          "chg": -1.38
+          "ltp": 180.89,
+          "chg": 1.06
         },
         {
           "sym": "JSWSTEEL",
-          "ltp": 1315.9,
-          "chg": -1.21
+          "ltp": 1336.8,
+          "chg": 1.59
         },
         {
           "sym": "HINDALCO",
-          "ltp": 900.0,
-          "chg": -2.99
+          "ltp": 910.0,
+          "chg": 1.11
         },
         {
           "sym": "COALINDIA",
-          "ltp": 388.0,
-          "chg": -0.91
+          "ltp": 391.5,
+          "chg": 0.9
         },
         {
           "sym": "VEDL",
-          "ltp": 245.4,
-          "chg": -3.78
+          "ltp": 243.7,
+          "chg": -0.69
+        }
+      ]
+    },
+    {
+      "name": "PHARMA",
+      "chg": 0.7,
+      "leader": "SUNPHARMA",
+      "leader_price": 1900.0,
+      "leader_chg": 1.52,
+      "stocks": [
+        {
+          "sym": "SUNPHARMA",
+          "ltp": 1900.0,
+          "chg": 1.52
+        },
+        {
+          "sym": "DRREDDY",
+          "ltp": 1400.9,
+          "chg": 0.19
+        },
+        {
+          "sym": "CIPLA",
+          "ltp": 1418.5,
+          "chg": 0.11
+        },
+        {
+          "sym": "DIVISLAB",
+          "ltp": 11178.0,
+          "chg": 1.17
+        },
+        {
+          "sym": "AUROPHARMA",
+          "ltp": 1805.7,
+          "chg": 0.52
+        }
+      ]
+    },
+    {
+      "name": "TELECOM",
+      "chg": 0.56,
+      "leader": "BHARTIARTL",
+      "leader_price": 2144.0,
+      "leader_chg": 0.56,
+      "stocks": [
+        {
+          "sym": "BHARTIARTL",
+          "ltp": 2144.0,
+          "chg": 0.56
+        }
+      ]
+    },
+    {
+      "name": "REALTY",
+      "chg": 0.48,
+      "leader": "DLF",
+      "leader_price": 768.0,
+      "leader_chg": 0.48,
+      "stocks": [
+        {
+          "sym": "DLF",
+          "ltp": 768.0,
+          "chg": 0.48
         }
       ]
     },
     {
       "name": "CONSUMER",
-      "chg": -2.46,
+      "chg": 0.37,
       "leader": "TITAN",
-      "leader_price": 4648.1,
-      "leader_chg": -5.3,
+      "leader_price": 4700.0,
+      "leader_chg": 1.12,
       "stocks": [
         {
           "sym": "TITAN",
-          "ltp": 4648.1,
-          "chg": -5.3
+          "ltp": 4700.0,
+          "chg": 1.12
         },
         {
           "sym": "ASIANPAINT",
-          "ltp": 2580.3,
-          "chg": -1.7
+          "ltp": 2595.0,
+          "chg": 0.57
         },
         {
           "sym": "DMART",
-          "ltp": 30810.0,
-          "chg": -0.95
+          "ltp": 31065.0,
+          "chg": 0.83
         },
         {
           "sym": "TRENT",
-          "ltp": 1767.3,
-          "chg": -1.94
+          "ltp": 1751.7,
+          "chg": -0.88
         },
         {
           "sym": "ZOMATO",
-          "ltp": 366.0,
-          "chg": -2.41
+          "ltp": 366.85,
+          "chg": 0.23
+        }
+      ]
+    },
+    {
+      "name": "IT",
+      "chg": -1.0,
+      "leader": "TCS",
+      "leader_price": 2342.7,
+      "leader_chg": -1.55,
+      "stocks": [
+        {
+          "sym": "INFY",
+          "ltp": 1091.9,
+          "chg": -1.52
+        },
+        {
+          "sym": "TCS",
+          "ltp": 2342.7,
+          "chg": -1.55
+        },
+        {
+          "sym": "WIPRO",
+          "ltp": 183.93,
+          "chg": -0.65
+        },
+        {
+          "sym": "HCLTECH",
+          "ltp": 1332.9,
+          "chg": -0.88
+        },
+        {
+          "sym": "TECHM",
+          "ltp": 1723.0,
+          "chg": -1.54
+        },
+        {
+          "sym": "LTIM",
+          "ltp": 4079.9,
+          "chg": 0.12
         }
       ]
     }
   ],
   "long": [
     {
-      "sym": "NTPC",
-      "sec": "ENERGY",
-      "ltp": 320.4,
-      "chg": -0.44,
-      "open": 319.0,
-      "high": 320.75,
-      "low": 317.1,
-      "vwap": 315.87,
-      "orb_high": 320.75,
-      "orb_low": 317.1,
-      "orb_mid": 318.93,
-      "orb_range": 3.65,
-      "score": 5,
-      "rsi": 52,
-      "vol_ratio": 1.1,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": false,
-        "VWAP": true
-      },
-      "entry": 320.8,
-      "sl": 318.88,
-      "t1": 322.62,
-      "t2": 324.45,
-      "gtt_trigger": 320.8,
-      "gtt_limit": 320.85,
-      "sl_trigger": 318.88,
-      "sl_limit": 318.83,
-      "qty": 1558,
-      "risk_per_share": 1.92,
-      "max_risk": 2991.0,
-      "potential_profit": 2836.0,
-      "confirmation": "PENDING",
-      "side": "LONG",
-      "bias": "BEARISH",
-      "phase": "CLOSED"
-    },
-    {
-      "sym": "POWERGRID",
-      "sec": "ENERGY",
-      "ltp": 259.1,
-      "chg": 0.43,
-      "open": 257.0,
-      "high": 259.1,
-      "low": 255.8,
-      "vwap": 258.39,
-      "orb_high": 259.1,
-      "orb_low": 255.8,
-      "orb_mid": 257.45,
-      "orb_range": 3.3,
-      "score": 5,
-      "rsi": 50,
-      "vol_ratio": 0.9,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": false,
-        "VWAP": true
-      },
-      "entry": 259.15,
-      "sl": 257.4,
-      "t1": 260.8,
-      "t2": 262.45,
-      "gtt_trigger": 259.15,
-      "gtt_limit": 259.2,
-      "sl_trigger": 257.4,
-      "sl_limit": 257.35,
-      "qty": 1713,
-      "risk_per_share": 1.75,
-      "max_risk": 2998.0,
-      "potential_profit": 2826.0,
-      "confirmation": "PENDING",
-      "side": "LONG",
-      "bias": "BEARISH",
-      "phase": "CLOSED"
-    },
-    {
-      "sym": "DLF",
-      "sec": "REALTY",
-      "ltp": 764.3,
-      "chg": -0.22,
-      "open": 764.0,
-      "high": 770.5,
-      "low": 756.75,
-      "vwap": 722.3,
-      "orb_high": 770.5,
-      "orb_low": 756.75,
-      "orb_mid": 763.62,
-      "orb_range": 13.75,
-      "score": 5,
-      "rsi": 68,
-      "vol_ratio": 0.5,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": false,
-        "VWAP": true
-      },
-      "entry": 770.55,
-      "sl": 763.57,
-      "t1": 777.42,
-      "t2": 784.3,
-      "gtt_trigger": 770.55,
-      "gtt_limit": 770.6,
-      "sl_trigger": 763.57,
-      "sl_limit": 763.52,
-      "qty": 429,
-      "risk_per_share": 6.98,
-      "max_risk": 2994.0,
-      "potential_profit": 2947.0,
-      "confirmation": "PENDING",
-      "side": "LONG",
-      "bias": "BEARISH",
-      "phase": "CLOSED"
-    },
-    {
       "sym": "ULTRACEMCO",
       "sec": "CEMENT",
-      "ltp": 12428.0,
-      "chg": 1.12,
-      "open": 12225.0,
-      "high": 12428.0,
-      "low": 12225.0,
-      "vwap": 11753.03,
-      "orb_high": 12428.0,
-      "orb_low": 12225.0,
-      "orb_mid": 12326.5,
-      "orb_range": 203.0,
+      "ltp": 12560.0,
+      "chg": 1.06,
+      "open": 12400.0,
+      "high": 12595.0,
+      "low": 12342.0,
+      "vwap": 11815.44,
+      "orb_high": 12595.0,
+      "orb_low": 12342.0,
+      "orb_mid": 12468.5,
+      "orb_range": 253.0,
       "score": 5,
-      "rsi": 67,
-      "vol_ratio": 0.8,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": false,
-        "VWAP": true
-      },
-      "entry": 12428.05,
-      "sl": 12326.45,
-      "t1": 12529.55,
-      "t2": 12631.05,
-      "gtt_trigger": 12428.05,
-      "gtt_limit": 12428.1,
-      "sl_trigger": 12326.45,
-      "sl_limit": 12326.4,
-      "qty": 27,
-      "risk_per_share": 101.6,
-      "max_risk": 2743.0,
-      "potential_profit": 2740.0,
-      "confirmation": "PENDING",
-      "side": "LONG",
-      "bias": "BEARISH",
-      "phase": "CLOSED"
-    },
-    {
-      "sym": "SHREECEM",
-      "sec": "CEMENT",
-      "ltp": 24835.0,
-      "chg": -0.26,
-      "open": 24935.0,
-      "high": 24935.0,
-      "low": 24515.0,
-      "vwap": 23845.28,
-      "orb_high": 24935.0,
-      "orb_low": 24515.0,
-      "orb_mid": 24725.0,
-      "orb_range": 420.0,
-      "score": 5,
-      "rsi": 63,
-      "vol_ratio": 0.3,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": false,
-        "VWAP": true
-      },
-      "entry": 24935.05,
-      "sl": 24724.95,
-      "t1": 25145.05,
-      "t2": 25355.05,
-      "gtt_trigger": 24935.05,
-      "gtt_limit": 24935.1,
-      "sl_trigger": 24724.95,
-      "sl_limit": 24724.9,
-      "qty": 12,
-      "risk_per_share": 210.1,
-      "max_risk": 2521.0,
-      "potential_profit": 2520.0,
-      "confirmation": "PENDING",
-      "side": "LONG",
-      "bias": "BEARISH",
-      "phase": "CLOSED"
-    }
-  ],
-  "short": [
-    {
-      "sym": "OFSS",
-      "sec": "IT",
-      "ltp": 9694.5,
-      "chg": -0.48,
-      "open": 9741.0,
-      "high": 9773.0,
-      "low": 9631.0,
-      "vwap": 9949.68,
-      "orb_high": 9773.0,
-      "orb_low": 9631.0,
-      "orb_mid": 9702.0,
-      "orb_range": 142.0,
-      "score": 5,
-      "rsi": 37,
-      "vol_ratio": 0.6,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": false,
-        "VWAP": true
-      },
-      "entry": 9630.95,
-      "sl": 9702.05,
-      "t1": 9559.95,
-      "t2": 9488.95,
-      "gtt_trigger": 9630.95,
-      "gtt_limit": 9630.9,
-      "sl_trigger": 9702.05,
-      "sl_limit": 9702.1,
-      "qty": 42,
-      "risk_per_share": 71.1,
-      "max_risk": 2986.0,
-      "potential_profit": 2982.0,
-      "confirmation": "PENDING",
-      "side": "SHORT",
-      "bias": "BEARISH",
-      "phase": "CLOSED"
-    },
-    {
-      "sym": "TATAMOTORS",
-      "sec": "AUTO",
-      "ltp": 252.55,
-      "chg": -2.57,
-      "open": 259.2,
-      "high": 259.3,
-      "low": 252.2,
-      "vwap": 272.7,
-      "orb_high": 259.3,
-      "orb_low": 252.2,
-      "orb_mid": 255.75,
-      "orb_range": 7.1,
-      "score": 5,
-      "rsi": 31,
-      "vol_ratio": 1.4,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": false,
-        "VWAP": true
-      },
-      "entry": 252.15,
-      "sl": 255.8,
-      "t1": 248.6,
-      "t2": 245.05,
-      "gtt_trigger": 252.15,
-      "gtt_limit": 252.1,
-      "sl_trigger": 255.8,
-      "sl_limit": 255.85,
-      "qty": 819,
-      "risk_per_share": 3.65,
-      "max_risk": 2989.0,
-      "potential_profit": 2907.0,
-      "confirmation": "PENDING",
-      "side": "SHORT",
-      "bias": "BEARISH",
-      "phase": "CLOSED"
-    },
-    {
-      "sym": "TVSMOTOR",
-      "sec": "AUTO",
-      "ltp": 4610.7,
-      "chg": -1.24,
-      "open": 4668.8,
-      "high": 4699.5,
-      "low": 4610.7,
-      "vwap": 4652.55,
-      "orb_high": 4699.5,
-      "orb_low": 4610.7,
-      "orb_mid": 4655.1,
-      "orb_range": 88.8,
-      "score": 5,
-      "rsi": 40,
-      "vol_ratio": 0.8,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": false,
-        "VWAP": true
-      },
-      "entry": 4610.65,
-      "sl": 4655.15,
-      "t1": 4566.25,
-      "t2": 4521.85,
-      "gtt_trigger": 4610.65,
-      "gtt_limit": 4610.6,
-      "sl_trigger": 4655.15,
-      "sl_limit": 4655.2,
-      "qty": 66,
-      "risk_per_share": 44.5,
-      "max_risk": 2937.0,
-      "potential_profit": 2930.0,
-      "confirmation": "PENDING",
-      "side": "SHORT",
-      "bias": "BEARISH",
-      "phase": "CLOSED"
-    },
-    {
-      "sym": "IRCTC",
-      "sec": "CONSUMER",
-      "ltp": 444.35,
-      "chg": -1.11,
-      "open": 449.0,
-      "high": 449.05,
-      "low": 442.4,
-      "vwap": 458.95,
-      "orb_high": 449.05,
-      "orb_low": 442.4,
-      "orb_mid": 445.73,
-      "orb_range": 6.65,
-      "score": 5,
-      "rsi": 41,
+      "rsi": 69,
       "vol_ratio": 0.7,
       "conds": {
         "EMA20": true,
@@ -840,39 +510,246 @@
         "VOL": false,
         "VWAP": true
       },
-      "entry": 442.35,
-      "sl": 445.78,
-      "t1": 439.03,
-      "t2": 435.7,
-      "gtt_trigger": 442.35,
-      "gtt_limit": 442.3,
-      "sl_trigger": 445.78,
-      "sl_limit": 445.83,
-      "qty": 873,
-      "risk_per_share": 3.43,
-      "max_risk": 2994.0,
-      "potential_profit": 2898.0,
+      "entry": 12595.05,
+      "sl": 12468.45,
+      "t1": 12721.55,
+      "t2": 12848.05,
+      "gtt_trigger": 12595.05,
+      "gtt_limit": 12595.1,
+      "sl_trigger": 12468.45,
+      "sl_limit": 12468.4,
+      "qty": 21,
+      "risk_per_share": 126.6,
+      "max_risk": 2659.0,
+      "potential_profit": 2656.0,
       "confirmation": "PENDING",
-      "side": "SHORT",
-      "bias": "BEARISH",
+      "side": "LONG",
+      "bias": "BULLISH",
       "phase": "CLOSED"
     },
     {
-      "sym": "INFY",
+      "sym": "SHREECEM",
+      "sec": "CEMENT",
+      "ltp": 25115.0,
+      "chg": 1.13,
+      "open": 24750.0,
+      "high": 25195.0,
+      "low": 24670.0,
+      "vwap": 23931.18,
+      "orb_high": 25195.0,
+      "orb_low": 24670.0,
+      "orb_mid": 24932.5,
+      "orb_range": 525.0,
+      "score": 5,
+      "rsi": 66,
+      "vol_ratio": 0.4,
+      "conds": {
+        "EMA20": true,
+        "SUPERT": true,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "VWAP": true
+      },
+      "entry": 25195.05,
+      "sl": 24932.45,
+      "t1": 25457.55,
+      "t2": 25720.05,
+      "gtt_trigger": 25195.05,
+      "gtt_limit": 25195.1,
+      "sl_trigger": 24932.45,
+      "sl_limit": 24932.4,
+      "qty": 9,
+      "risk_per_share": 262.6,
+      "max_risk": 2363.0,
+      "potential_profit": 2362.0,
+      "confirmation": "PENDING",
+      "side": "LONG",
+      "bias": "BULLISH",
+      "phase": "CLOSED"
+    },
+    {
+      "sym": "ITC",
+      "sec": "FMCG",
+      "ltp": 301.0,
+      "chg": 1.48,
+      "open": 296.8,
+      "high": 301.85,
+      "low": 296.65,
+      "vwap": 0,
+      "orb_high": 301.85,
+      "orb_low": 296.65,
+      "orb_mid": 299.25,
+      "orb_range": 5.2,
+      "score": 3,
+      "rsi": 50,
+      "vol_ratio": 1.0,
+      "conds": {
+        "EMA20": false,
+        "SUPERT": true,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "VWAP": false
+      },
+      "entry": 301.9,
+      "sl": 299.2,
+      "t1": 304.5,
+      "t2": 307.1,
+      "gtt_trigger": 301.9,
+      "gtt_limit": 301.95,
+      "sl_trigger": 299.2,
+      "sl_limit": 299.15,
+      "qty": 1110,
+      "risk_per_share": 2.7,
+      "max_risk": 2997.0,
+      "potential_profit": 2886.0,
+      "confirmation": "PENDING",
+      "side": "LONG",
+      "bias": "BULLISH",
+      "phase": "CLOSED"
+    },
+    {
+      "sym": "MARICO",
+      "sec": "FMCG",
+      "ltp": 918.8,
+      "chg": 1.41,
+      "open": 906.05,
+      "high": 918.8,
+      "low": 904.85,
+      "vwap": 0,
+      "orb_high": 918.8,
+      "orb_low": 904.85,
+      "orb_mid": 911.83,
+      "orb_range": 13.95,
+      "score": 3,
+      "rsi": 50,
+      "vol_ratio": 1.0,
+      "conds": {
+        "EMA20": false,
+        "SUPERT": true,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "VWAP": false
+      },
+      "entry": 918.85,
+      "sl": 911.78,
+      "t1": 925.83,
+      "t2": 932.8,
+      "gtt_trigger": 918.85,
+      "gtt_limit": 918.9,
+      "sl_trigger": 911.78,
+      "sl_limit": 911.73,
+      "qty": 423,
+      "risk_per_share": 7.07,
+      "max_risk": 2991.0,
+      "potential_profit": 2953.0,
+      "confirmation": "PENDING",
+      "side": "LONG",
+      "bias": "BULLISH",
+      "phase": "CLOSED"
+    },
+    {
+      "sym": "LT",
+      "sec": "INFRA",
+      "ltp": 4211.0,
+      "chg": 1.25,
+      "open": 4158.0,
+      "high": 4212.0,
+      "low": 4112.0,
+      "vwap": 0,
+      "orb_high": 4212.0,
+      "orb_low": 4112.0,
+      "orb_mid": 4162.0,
+      "orb_range": 100.0,
+      "score": 3,
+      "rsi": 50,
+      "vol_ratio": 1.0,
+      "conds": {
+        "EMA20": false,
+        "SUPERT": true,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "VWAP": false
+      },
+      "entry": 4212.05,
+      "sl": 4161.95,
+      "t1": 4262.05,
+      "t2": 4312.05,
+      "gtt_trigger": 4212.05,
+      "gtt_limit": 4212.1,
+      "sl_trigger": 4161.95,
+      "sl_limit": 4161.9,
+      "qty": 57,
+      "risk_per_share": 50.1,
+      "max_risk": 2856.0,
+      "potential_profit": 2850.0,
+      "confirmation": "PENDING",
+      "side": "LONG",
+      "bias": "BULLISH",
+      "phase": "CLOSED"
+    }
+  ],
+  "short": [
+    {
+      "sym": "MPHASIS",
       "sec": "IT",
-      "ltp": 1108.8,
-      "chg": -1.88,
-      "open": 1120.0,
-      "high": 1127.8,
-      "low": 1106.6,
-      "vwap": 1147.74,
-      "orb_high": 1127.8,
-      "orb_low": 1106.6,
-      "orb_mid": 1117.2,
-      "orb_range": 21.2,
+      "ltp": 2356.0,
+      "chg": -1.71,
+      "open": 2381.6,
+      "high": 2384.0,
+      "low": 2333.0,
+      "vwap": 2515.3,
+      "orb_high": 2384.0,
+      "orb_low": 2333.0,
+      "orb_mid": 2358.5,
+      "orb_range": 51.0,
+      "score": 5,
+      "rsi": 41,
+      "vol_ratio": 0.8,
+      "conds": {
+        "EMA20": true,
+        "SUPERT": true,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "VWAP": true
+      },
+      "entry": 2332.95,
+      "sl": 2358.55,
+      "t1": 2307.45,
+      "t2": 2281.95,
+      "gtt_trigger": 2332.95,
+      "gtt_limit": 2332.9,
+      "sl_trigger": 2358.55,
+      "sl_limit": 2358.6,
+      "qty": 117,
+      "risk_per_share": 25.6,
+      "max_risk": 2995.0,
+      "potential_profit": 2984.0,
+      "confirmation": "PENDING",
+      "side": "SHORT",
+      "bias": "BULLISH",
+      "phase": "CLOSED"
+    },
+    {
+      "sym": "TCS",
+      "sec": "IT",
+      "ltp": 2342.7,
+      "chg": -1.55,
+      "open": 2367.0,
+      "high": 2385.6,
+      "low": 2327.7,
+      "vwap": 2481.95,
+      "orb_high": 2385.6,
+      "orb_low": 2327.7,
+      "orb_mid": 2356.65,
+      "orb_range": 57.9,
       "score": 4,
-      "rsi": 45,
-      "vol_ratio": 0.5,
+      "rsi": 41,
+      "vol_ratio": 0.6,
       "conds": {
         "EMA20": true,
         "SUPERT": true,
@@ -881,41 +758,164 @@
         "VOL": false,
         "VWAP": true
       },
-      "entry": 1106.55,
-      "sl": 1117.25,
-      "t1": 1095.95,
-      "t2": 1085.35,
-      "gtt_trigger": 1106.55,
-      "gtt_limit": 1106.5,
-      "sl_trigger": 1117.25,
-      "sl_limit": 1117.3,
-      "qty": 279,
-      "risk_per_share": 10.7,
-      "max_risk": 2985.0,
-      "potential_profit": 2957.0,
+      "entry": 2327.65,
+      "sl": 2356.7,
+      "t1": 2298.7,
+      "t2": 2269.75,
+      "gtt_trigger": 2327.65,
+      "gtt_limit": 2327.6,
+      "sl_trigger": 2356.7,
+      "sl_limit": 2356.75,
+      "qty": 102,
+      "risk_per_share": 29.05,
+      "max_risk": 2963.0,
+      "potential_profit": 2953.0,
       "confirmation": "PENDING",
       "side": "SHORT",
-      "bias": "BEARISH",
+      "bias": "BULLISH",
+      "phase": "CLOSED"
+    },
+    {
+      "sym": "LTIM",
+      "sec": "IT",
+      "ltp": 4079.9,
+      "chg": 0.12,
+      "open": 4075.0,
+      "high": 4109.0,
+      "low": 4002.5,
+      "vwap": 4187.3,
+      "orb_high": 4109.0,
+      "orb_low": 4002.5,
+      "orb_mid": 4055.75,
+      "orb_range": 106.5,
+      "score": 4,
+      "rsi": 41,
+      "vol_ratio": 0.6,
+      "conds": {
+        "EMA20": true,
+        "SUPERT": false,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "VWAP": true
+      },
+      "entry": 4002.45,
+      "sl": 4055.8,
+      "t1": 3949.2,
+      "t2": 3895.95,
+      "gtt_trigger": 4002.45,
+      "gtt_limit": 4002.4,
+      "sl_trigger": 4055.8,
+      "sl_limit": 4055.85,
+      "qty": 54,
+      "risk_per_share": 53.35,
+      "max_risk": 2881.0,
+      "potential_profit": 2876.0,
+      "confirmation": "PENDING",
+      "side": "SHORT",
+      "bias": "BULLISH",
+      "phase": "CLOSED"
+    },
+    {
+      "sym": "DMART",
+      "sec": "CONSUMER",
+      "ltp": 31065.0,
+      "chg": 0.83,
+      "open": 30820.0,
+      "high": 31360.0,
+      "low": 30715.0,
+      "vwap": 32952.79,
+      "orb_high": 31360.0,
+      "orb_low": 30715.0,
+      "orb_mid": 31037.5,
+      "orb_range": 645.0,
+      "score": 4,
+      "rsi": 31,
+      "vol_ratio": 1.2,
+      "conds": {
+        "EMA20": true,
+        "SUPERT": false,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "VWAP": true
+      },
+      "entry": 30714.95,
+      "sl": 31037.55,
+      "t1": 30392.45,
+      "t2": 30069.95,
+      "gtt_trigger": 30714.95,
+      "gtt_limit": 30714.9,
+      "sl_trigger": 31037.55,
+      "sl_limit": 31037.6,
+      "qty": 9,
+      "risk_per_share": 322.6,
+      "max_risk": 2903.0,
+      "potential_profit": 2902.0,
+      "confirmation": "PENDING",
+      "side": "SHORT",
+      "bias": "BULLISH",
+      "phase": "CLOSED"
+    },
+    {
+      "sym": "IRCTC",
+      "sec": "CONSUMER",
+      "ltp": 449.9,
+      "chg": 1.25,
+      "open": 444.35,
+      "high": 450.9,
+      "low": 441.0,
+      "vwap": 458.82,
+      "orb_high": 450.9,
+      "orb_low": 441.0,
+      "orb_mid": 445.95,
+      "orb_range": 9.9,
+      "score": 4,
+      "rsi": 46,
+      "vol_ratio": 0.7,
+      "conds": {
+        "EMA20": true,
+        "SUPERT": false,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "VWAP": true
+      },
+      "entry": 440.95,
+      "sl": 446.0,
+      "t1": 436.0,
+      "t2": 431.05,
+      "gtt_trigger": 440.95,
+      "gtt_limit": 440.9,
+      "sl_trigger": 446.0,
+      "sl_limit": 446.05,
+      "qty": 594,
+      "risk_per_share": 5.05,
+      "max_risk": 3000.0,
+      "potential_profit": 2940.0,
+      "confirmation": "PENDING",
+      "side": "SHORT",
+      "bias": "BULLISH",
       "phase": "CLOSED"
     }
   ],
   "trade_long": [
     {
-      "sym": "NTPC",
-      "sec": "ENERGY",
-      "ltp": 320.4,
-      "chg": -0.44,
-      "open": 319.0,
-      "high": 320.75,
-      "low": 317.1,
-      "vwap": 315.87,
-      "orb_high": 320.75,
-      "orb_low": 317.1,
-      "orb_mid": 318.93,
-      "orb_range": 3.65,
+      "sym": "ULTRACEMCO",
+      "sec": "CEMENT",
+      "ltp": 12560.0,
+      "chg": 1.06,
+      "open": 12400.0,
+      "high": 12595.0,
+      "low": 12342.0,
+      "vwap": 11815.44,
+      "orb_high": 12595.0,
+      "orb_low": 12342.0,
+      "orb_mid": 12468.5,
+      "orb_range": 253.0,
       "score": 5,
-      "rsi": 52,
-      "vol_ratio": 1.1,
+      "rsi": 69,
+      "vol_ratio": 0.7,
       "conds": {
         "EMA20": true,
         "SUPERT": true,
@@ -924,39 +924,39 @@
         "VOL": false,
         "VWAP": true
       },
-      "entry": 320.8,
-      "sl": 318.88,
-      "t1": 322.62,
-      "t2": 324.45,
-      "gtt_trigger": 320.8,
-      "gtt_limit": 320.85,
-      "sl_trigger": 318.88,
-      "sl_limit": 318.83,
-      "qty": 1558,
-      "risk_per_share": 1.92,
-      "max_risk": 2991.0,
-      "potential_profit": 2836.0,
+      "entry": 12595.05,
+      "sl": 12468.45,
+      "t1": 12721.55,
+      "t2": 12848.05,
+      "gtt_trigger": 12595.05,
+      "gtt_limit": 12595.1,
+      "sl_trigger": 12468.45,
+      "sl_limit": 12468.4,
+      "qty": 21,
+      "risk_per_share": 126.6,
+      "max_risk": 2659.0,
+      "potential_profit": 2656.0,
       "confirmation": "PENDING",
       "side": "LONG",
-      "bias": "BEARISH",
+      "bias": "BULLISH",
       "phase": "CLOSED"
     },
     {
-      "sym": "POWERGRID",
-      "sec": "ENERGY",
-      "ltp": 259.1,
-      "chg": 0.43,
-      "open": 257.0,
-      "high": 259.1,
-      "low": 255.8,
-      "vwap": 258.39,
-      "orb_high": 259.1,
-      "orb_low": 255.8,
-      "orb_mid": 257.45,
-      "orb_range": 3.3,
+      "sym": "SHREECEM",
+      "sec": "CEMENT",
+      "ltp": 25115.0,
+      "chg": 1.13,
+      "open": 24750.0,
+      "high": 25195.0,
+      "low": 24670.0,
+      "vwap": 23931.18,
+      "orb_high": 25195.0,
+      "orb_low": 24670.0,
+      "orb_mid": 24932.5,
+      "orb_range": 525.0,
       "score": 5,
-      "rsi": 50,
-      "vol_ratio": 0.9,
+      "rsi": 66,
+      "vol_ratio": 0.4,
       "conds": {
         "EMA20": true,
         "SUPERT": true,
@@ -965,143 +965,178 @@
         "VOL": false,
         "VWAP": true
       },
-      "entry": 259.15,
-      "sl": 257.4,
-      "t1": 260.8,
-      "t2": 262.45,
-      "gtt_trigger": 259.15,
-      "gtt_limit": 259.2,
-      "sl_trigger": 257.4,
-      "sl_limit": 257.35,
-      "qty": 1713,
-      "risk_per_share": 1.75,
-      "max_risk": 2998.0,
-      "potential_profit": 2826.0,
+      "entry": 25195.05,
+      "sl": 24932.45,
+      "t1": 25457.55,
+      "t2": 25720.05,
+      "gtt_trigger": 25195.05,
+      "gtt_limit": 25195.1,
+      "sl_trigger": 24932.45,
+      "sl_limit": 24932.4,
+      "qty": 9,
+      "risk_per_share": 262.6,
+      "max_risk": 2363.0,
+      "potential_profit": 2362.0,
       "confirmation": "PENDING",
       "side": "LONG",
-      "bias": "BEARISH",
+      "bias": "BULLISH",
       "phase": "CLOSED"
     }
   ],
   "trade_short": [
     {
-      "sym": "OFSS",
+      "sym": "MPHASIS",
       "sec": "IT",
-      "ltp": 9694.5,
-      "chg": -0.48,
-      "open": 9741.0,
-      "high": 9773.0,
-      "low": 9631.0,
-      "vwap": 9949.68,
-      "orb_high": 9773.0,
-      "orb_low": 9631.0,
-      "orb_mid": 9702.0,
-      "orb_range": 142.0,
+      "ltp": 2356.0,
+      "chg": -1.71,
+      "open": 2381.6,
+      "high": 2384.0,
+      "low": 2333.0,
+      "vwap": 2515.3,
+      "orb_high": 2384.0,
+      "orb_low": 2333.0,
+      "orb_mid": 2358.5,
+      "orb_range": 51.0,
       "score": 5,
-      "rsi": 37,
+      "rsi": 41,
+      "vol_ratio": 0.8,
+      "conds": {
+        "EMA20": true,
+        "SUPERT": true,
+        "RSI": true,
+        "MACD": true,
+        "VOL": false,
+        "VWAP": true
+      },
+      "entry": 2332.95,
+      "sl": 2358.55,
+      "t1": 2307.45,
+      "t2": 2281.95,
+      "gtt_trigger": 2332.95,
+      "gtt_limit": 2332.9,
+      "sl_trigger": 2358.55,
+      "sl_limit": 2358.6,
+      "qty": 117,
+      "risk_per_share": 25.6,
+      "max_risk": 2995.0,
+      "potential_profit": 2984.0,
+      "confirmation": "PENDING",
+      "side": "SHORT",
+      "bias": "BULLISH",
+      "phase": "CLOSED"
+    },
+    {
+      "sym": "TCS",
+      "sec": "IT",
+      "ltp": 2342.7,
+      "chg": -1.55,
+      "open": 2367.0,
+      "high": 2385.6,
+      "low": 2327.7,
+      "vwap": 2481.95,
+      "orb_high": 2385.6,
+      "orb_low": 2327.7,
+      "orb_mid": 2356.65,
+      "orb_range": 57.9,
+      "score": 4,
+      "rsi": 41,
       "vol_ratio": 0.6,
       "conds": {
         "EMA20": true,
         "SUPERT": true,
         "RSI": true,
-        "MACD": true,
+        "MACD": false,
         "VOL": false,
         "VWAP": true
       },
-      "entry": 9630.95,
-      "sl": 9702.05,
-      "t1": 9559.95,
-      "t2": 9488.95,
-      "gtt_trigger": 9630.95,
-      "gtt_limit": 9630.9,
-      "sl_trigger": 9702.05,
-      "sl_limit": 9702.1,
-      "qty": 42,
-      "risk_per_share": 71.1,
-      "max_risk": 2986.0,
-      "potential_profit": 2982.0,
+      "entry": 2327.65,
+      "sl": 2356.7,
+      "t1": 2298.7,
+      "t2": 2269.75,
+      "gtt_trigger": 2327.65,
+      "gtt_limit": 2327.6,
+      "sl_trigger": 2356.7,
+      "sl_limit": 2356.75,
+      "qty": 102,
+      "risk_per_share": 29.05,
+      "max_risk": 2963.0,
+      "potential_profit": 2953.0,
       "confirmation": "PENDING",
       "side": "SHORT",
-      "bias": "BEARISH",
-      "phase": "CLOSED"
-    },
-    {
-      "sym": "TATAMOTORS",
-      "sec": "AUTO",
-      "ltp": 252.55,
-      "chg": -2.57,
-      "open": 259.2,
-      "high": 259.3,
-      "low": 252.2,
-      "vwap": 272.7,
-      "orb_high": 259.3,
-      "orb_low": 252.2,
-      "orb_mid": 255.75,
-      "orb_range": 7.1,
-      "score": 5,
-      "rsi": 31,
-      "vol_ratio": 1.4,
-      "conds": {
-        "EMA20": true,
-        "SUPERT": true,
-        "RSI": true,
-        "MACD": true,
-        "VOL": false,
-        "VWAP": true
-      },
-      "entry": 252.15,
-      "sl": 255.8,
-      "t1": 248.6,
-      "t2": 245.05,
-      "gtt_trigger": 252.15,
-      "gtt_limit": 252.1,
-      "sl_trigger": 255.8,
-      "sl_limit": 255.85,
-      "qty": 819,
-      "risk_per_share": 3.65,
-      "max_risk": 2989.0,
-      "potential_profit": 2907.0,
-      "confirmation": "PENDING",
-      "side": "SHORT",
-      "bias": "BEARISH",
+      "bias": "BULLISH",
       "phase": "CLOSED"
     }
   ],
   "skipped": [
     {
-      "sym": "SBIN",
+      "sym": "BANKBARODA",
       "sec": "BANKING",
-      "ltp": 1135.0,
-      "chg": 2.38,
+      "ltp": 285.9,
+      "chg": 4.15,
+      "reason": "First candle 4.0% \u2014 already moved"
+    },
+    {
+      "sym": "CANBK",
+      "sec": "BANKING",
+      "ltp": 136.03,
+      "chg": 1.97,
+      "reason": "First candle 3.3% \u2014 already moved"
+    },
+    {
+      "sym": "SBILIFE",
+      "sec": "FINANCE",
+      "ltp": 1804.6,
+      "chg": 0.93,
+      "reason": "First candle 2.4% \u2014 already moved"
+    },
+    {
+      "sym": "PFC",
+      "sec": "FINANCE",
+      "ltp": 331.6,
+      "chg": 2.49,
       "reason": "First candle 3.0% \u2014 already moved"
     },
     {
-      "sym": "RECLTD",
-      "sec": "FINANCE",
-      "ltp": 412.4,
-      "chg": 0.22,
-      "reason": "First candle 2.1% \u2014 already moved"
-    },
-    {
-      "sym": "CIPLA",
-      "sec": "PHARMA",
-      "ltp": 1417.0,
-      "chg": 2.09,
-      "reason": "First candle 3.2% \u2014 already moved"
-    },
-    {
-      "sym": "UPL",
-      "sec": "PHARMA",
-      "ltp": 552.0,
-      "chg": 0.05,
+      "sym": "OFSS",
+      "sec": "IT",
+      "ltp": 9836.5,
+      "chg": 1.46,
       "reason": "First candle 2.3% \u2014 already moved"
     },
     {
-      "sym": "ITC",
-      "sec": "FMCG",
-      "ltp": 296.6,
-      "chg": 1.13,
-      "reason": "First candle 2.2% \u2014 already moved"
+      "sym": "MARUTI",
+      "sec": "AUTO",
+      "ltp": 13589.0,
+      "chg": 7.58,
+      "reason": "First candle 7.8% \u2014 already moved"
+    },
+    {
+      "sym": "MM",
+      "sec": "AUTO",
+      "ltp": 3509.0,
+      "chg": 4.46,
+      "reason": "First candle 5.6% \u2014 already moved"
+    },
+    {
+      "sym": "TATAMOTORS",
+      "sec": "AUTO",
+      "ltp": 263.5,
+      "chg": 4.34,
+      "reason": "First candle 4.2% \u2014 already moved"
+    },
+    {
+      "sym": "BAJAJ-AUTO",
+      "sec": "AUTO",
+      "ltp": 10817.0,
+      "chg": 2.34,
+      "reason": "First candle 3.7% \u2014 already moved"
+    },
+    {
+      "sym": "HEROMOTOCO",
+      "sec": "AUTO",
+      "ltp": 5556.0,
+      "chg": 5.77,
+      "reason": "First candle 5.3% \u2014 already moved"
     }
   ],
   "capital": 100000,
